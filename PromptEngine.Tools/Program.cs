@@ -1,5 +1,4 @@
 using PromptEngine.Core.Runtime;
-using PromptEngine.Core.Models;
 
 namespace PromptEngine.Tools;
 
@@ -23,8 +22,8 @@ class Program
         {
             return command switch
             {
-                "validate" => ValidateCommand(args.Skip(1).ToArray()),
-                "list" => ListCommand(args.Skip(1).ToArray()),
+                "validate" => ValidateCommand([.. args.Skip(1)]),
+                "list" => ListCommand([.. args.Skip(1)]),
                 "help" or "--help" or "-h" => ShowHelp(),
                 _ => InvalidCommand(command)
             };

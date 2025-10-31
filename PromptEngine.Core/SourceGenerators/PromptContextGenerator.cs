@@ -5,8 +5,9 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using PromptEngine.Core.Models;
 using PromptEngine.Core.Parsers;
+using System.Collections.Generic;
 
-namespace PromptEngine.Analyzer.SourceGenerators;
+namespace PromptEngine.Core.SourceGenerators;
 
 [Generator]
 public class PromptContextGenerator : IIncrementalGenerator
@@ -38,7 +39,11 @@ public class PromptContextGenerator : IIncrementalGenerator
         });
     }
 
-    private readonly record struct AdditionalFileInfo(string Path, SourceText? Content);
+    private readonly struct AdditionalFileInfo(string path, SourceText? content)
+    {
+        public string Path { get; } = path;
+        public SourceText? Content { get; } = content;
+    }
 
     private static bool IsSyntaxTargetForGeneration(SyntaxNode node)
     => node is ClassDeclarationSyntax cds && cds.AttributeLists.Count > 0;
@@ -79,8 +84,8 @@ public class PromptContextGenerator : IIncrementalGenerator
             context.CancellationToken.ThrowIfCancellationRequested();
 
             var semanticModel = compilation.GetSemanticModel(classDeclaration.SyntaxTree);
-            INamedTypeSymbol? classSymbol = semanticModel.GetDeclaredSymbol(classDeclaration) as INamedTypeSymbol;
-            if (classSymbol is null) continue;
+            if (semanticModel.GetDeclaredSymbol(classDeclaration)
+                    is not INamedTypeSymbol classSymbol) continue;
 
             var attribute = classSymbol.GetAttributes()
             .FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == "PromptEngine.Core.Attributes.PromptContextAttribute");
@@ -116,11 +121,20 @@ public class PromptContextGenerator : IIncrementalGenerator
             var placeholders = PromptTemplateParser.ExtractPlaceholders(templateContent);
 
             // Collect public context properties
-            var properties = classSymbol!.GetMembers()
-            .OfType<IPropertySymbol>()
-            .Where(p => p.DeclaredAccessibility == Accessibility.Public)
-            .Select(p => p.Name)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            // NOTE: .ToHashSet is not available on older target frameworks; construct HashSet manually.
+            var properties = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var propertySymbols = classSymbol!.GetMembers()
+                .OfType<IPropertySymbol>()
+                .Where(p => p.DeclaredAccessibility == Accessibility.Public)
+                .Select(p => p.Name);
+
+            foreach (var name in propertySymbols)
+            {
+                if (name is not null)
+                {
+                    properties.Add(name);
+                }
+            }
 
             // Validate
             var (isValid, missing, unused) = PromptTemplateParser.ValidateTemplate(placeholders, properties);
@@ -151,8 +165,8 @@ public class PromptContextGenerator : IIncrementalGenerator
                 TemplateName = templateName,
                 TemplatePath = resolvedPath ?? templatePath!,
                 ContextTypeName = classSymbol.ToDisplayString(),
-                Placeholders = placeholders.ToList(),
-                ContextProperties = properties.ToList(),
+                Placeholders = [.. placeholders],
+                ContextProperties = [.. properties],
                 TemplateContent = templateContent
             });
         }

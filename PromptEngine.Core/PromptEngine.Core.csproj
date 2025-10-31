@@ -1,20 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageId>PromptEngine.Core</PackageId>
-    <Version>1.0.0</Version>
-    <Authors>Your Company</Authors>
-    <Description>A prompt engineering framework for C# Agent development with compile-time and runtime validation</Description>
-    <PackageTags>prompt;ai;agent;llm;source-generator</PackageTags>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<LangVersion>latest</LangVersion>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageId>PromptEngine.Core</PackageId>
+		<Version>1.0.0</Version>
+		<Authors>Your Company</Authors>
+		<Description>A prompt engineering framework for C# Agent development with compile-time and runtime validation</Description>
+		<PackageTags>prompt;ai;agent;llm;source-generator</PackageTags>
+	</PropertyGroup>
 
-  <ItemGroup><!-- Core does not reference Roslyn directly anymore; common models/parsers only -->
-  
-    <Folder Include="SourceGenerators\" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
+		<PackageReference Include="System.Text.Json" Version="9.0.10" />
+	</ItemGroup>	
 
 </Project>
