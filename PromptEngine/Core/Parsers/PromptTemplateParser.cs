@@ -7,74 +7,74 @@ namespace PromptEngine.Core.Parsers;
 /// </summary>
 public static class PromptTemplateParser
 {
- private static readonly Regex PlaceholderRegex = new(@"\{(\w+)\}", RegexOptions.Compiled);
+    private static readonly Regex PlaceholderRegex = new(@"\{(\w+)\}", RegexOptions.Compiled);
 
- /// <summary>
- /// Extract placeholders from template content
- /// </summary>
- public static HashSet<string> ExtractPlaceholders(string templateContent)
- {
- if (string.IsNullOrWhiteSpace(templateContent))
- return new HashSet<string>();
+    /// <summary>
+    /// Extract placeholders from template content
+    /// </summary>
+    public static HashSet<string> ExtractPlaceholders(string templateContent)
+    {
+        if (string.IsNullOrWhiteSpace(templateContent))
+            return new HashSet<string>();
 
- var matches = PlaceholderRegex.Matches(templateContent);
- var placeholders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var matches = PlaceholderRegex.Matches(templateContent);
+        var placeholders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
- foreach (Match match in matches)
- {
- if (match.Groups.Count >1)
- {
- placeholders.Add(match.Groups[1].Value);
- }
- }
+        foreach (Match match in matches)
+        {
+            if (match.Groups.Count > 1)
+            {
+                placeholders.Add(match.Groups[1].Value);
+            }
+        }
 
- return placeholders;
- }
+        return placeholders;
+    }
 
- /// <summary>
- /// Validate that placeholders in template match context properties
- /// </summary>
- public static (bool IsValid, List<string> MissingProperties, List<string> UnusedProperties) 
- ValidateTemplate(HashSet<string> placeholders, HashSet<string> contextProperties)
- {
- var missingProperties = new List<string>();
- var unusedProperties = new List<string>();
+    /// <summary>
+    /// Validate that placeholders in template match context properties
+    /// </summary>
+    public static (bool IsValid, List<string> MissingProperties, List<string> UnusedProperties)
+    ValidateTemplate(HashSet<string> placeholders, HashSet<string> contextProperties)
+    {
+        var missingProperties = new List<string>();
+        var unusedProperties = new List<string>();
 
- // Check that each placeholder has a corresponding context property
- foreach (var placeholder in placeholders)
- {
- if (!contextProperties.Contains(placeholder, StringComparer.OrdinalIgnoreCase))
- {
- missingProperties.Add(placeholder);
- }
- }
+        // Check that each placeholder has a corresponding context property
+        foreach (var placeholder in placeholders)
+        {
+            if (!contextProperties.Contains(placeholder, StringComparer.OrdinalIgnoreCase))
+            {
+                missingProperties.Add(placeholder);
+            }
+        }
 
- // Find context properties that are not used in the template
- foreach (var property in contextProperties)
- {
- if (!placeholders.Contains(property, StringComparer.OrdinalIgnoreCase))
- {
- unusedProperties.Add(property);
- }
- }
+        // Find context properties that are not used in the template
+        foreach (var property in contextProperties)
+        {
+            if (!placeholders.Contains(property, StringComparer.OrdinalIgnoreCase))
+            {
+                unusedProperties.Add(property);
+            }
+        }
 
- bool isValid = missingProperties.Count ==0;
- return (isValid, missingProperties, unusedProperties);
- }
+        bool isValid = missingProperties.Count == 0;
+        return (isValid, missingProperties, unusedProperties);
+    }
 
- /// <summary>
- /// Replace placeholders in the template with provided values
- /// </summary>
- public static string ReplacePlaceholders(string template, Dictionary<string, string?> values)
- {
- return PlaceholderRegex.Replace(template, match =>
- {
- var key = match.Groups[1].Value;
- if (values.TryGetValue(key, out var value))
- {
- return value ?? string.Empty;
- }
- return match.Value; // keep original
- });
- }
+    /// <summary>
+    /// Replace placeholders in the template with provided values
+    /// </summary>
+    public static string ReplacePlaceholders(string template, Dictionary<string, string?> values)
+    {
+        return PlaceholderRegex.Replace(template, match =>
+        {
+            var key = match.Groups[1].Value;
+            if (values.TryGetValue(key, out var value))
+            {
+                return value ?? string.Empty;
+            }
+            return match.Value; // keep original
+        });
+    }
 }

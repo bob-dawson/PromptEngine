@@ -7,6 +7,5 @@
   <Project Path="PromptEngine.Analyzer/PromptEngine.Analyzer.csproj" />
   <Project Path="PromptEngine.Sample/PromptEngine.Sample.csproj" />
   <Project Path="PromptEngine.Tests/PromptEngine.Tests.csproj" />
-  <Project Path="PromptEngine.Tools/PromptEngine.Tools.csproj" />
   <Project Path="PromptEngine/PromptEngine.csproj" />
 </Solution>

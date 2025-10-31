@@ -49,7 +49,7 @@ public class PromptContextGenerator : IIncrementalGenerator
     }
 
     private static bool IsSyntaxTargetForGeneration(SyntaxNode node)
-    => node is ClassDeclarationSyntax cds && cds.AttributeLists.Count >0;
+    => node is ClassDeclarationSyntax cds && cds.AttributeLists.Count > 0;
 
     private static ClassDeclarationSyntax? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
     {
@@ -73,14 +73,14 @@ public class PromptContextGenerator : IIncrementalGenerator
     }
 
     private static void Execute(
-    Compilation compilation,
-    ImmutableArray<ClassDeclarationSyntax> classes,
-    ImmutableArray<AdditionalFileInfo> additionalFiles,
-    SourceProductionContext context)
+        Compilation compilation,
+        ImmutableArray<ClassDeclarationSyntax> classes,
+        ImmutableArray<AdditionalFileInfo> additionalFiles,
+        SourceProductionContext context)
     {
         if (classes.IsDefaultOrEmpty) return;
 
-        var metadataItems = new List<PromptMetadata>();
+        List<PromptBuilderRequest> requests = new();
 
         foreach (var classDeclaration in classes.Distinct())
         {
@@ -92,10 +92,10 @@ public class PromptContextGenerator : IIncrementalGenerator
 
             // Find all PromptContextAttribute usages on this class
             var attributes = classSymbol.GetAttributes()
-            .Where(a => a.AttributeClass?.ToDisplayString() == "PromptEngine.Core.Attributes.PromptContextAttribute")
-            .ToArray();
+                .Where(a => a.AttributeClass?.ToDisplayString() == "PromptEngine.Core.Attributes.PromptContextAttribute")
+                .ToArray();
 
-            if (attributes.Length ==0) continue;
+            if (attributes.Length == 0) continue;
 
             // Collect public context properties once per class
             var properties = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
@@ -122,7 +122,7 @@ public class PromptContextGenerator : IIncrementalGenerator
                 {
                     ReportDiagnostic(context, "PE001", DiagnosticSeverity.Error,
                     $"Template path cannot be null or empty for class '{classSymbol.Name}'",
-                    GetAttributeArgumentLocation(attribute,0) ?? classDeclaration.GetLocation());
+                    GetAttributeArgumentLocation(attribute, 0) ?? classDeclaration.GetLocation());
                     continue;
                 }
 
@@ -137,7 +137,7 @@ public class PromptContextGenerator : IIncrementalGenerator
                 {
                     ReportDiagnostic(context, "PE002", DiagnosticSeverity.Warning,
                     $"Template file '{templatePath}' not found in AdditionalFiles for class '{classSymbol.Name}'. Add it to <AdditionalFiles Include=\"...\" /> in your project.",
-                    GetAttributeArgumentLocation(attribute,0) ?? classDeclaration.GetLocation());
+                    GetAttributeArgumentLocation(attribute, 0) ?? classDeclaration.GetLocation());
                     continue;
                 }
 
@@ -158,7 +158,7 @@ public class PromptContextGenerator : IIncrementalGenerator
                     {
                         var needle = "{" + m + "}";
                         var idx = templateContent.IndexOf(needle, System.StringComparison.Ordinal);
-                        if (idx >=0)
+                        if (idx >= 0)
                         {
                             var span = new TextSpan(idx, needle.Length);
                             var lineSpan = resolvedText.Lines.GetLinePositionSpan(span);
@@ -173,21 +173,19 @@ public class PromptContextGenerator : IIncrementalGenerator
 
                 if (!isValid) continue;
 
-                // Generate strongly-typed builder for this template via Scriban
-                var builderSource = GeneratePromptBuilderWithScriban(classSymbol, templateName, templateContent, placeholders);
+                var request = new PromptBuilderRequest
+                {
+                    ContextClass = classSymbol,
+                    TemplateName = templateName,
+                    TemplateContent = templateContent,
+                    Placeholders = placeholders,
+                    ContextProperties = properties,
+                    TemplatePath = templatePath
+                };
+                requests.Add(request);
+                var builderSource = GeneratePromptBuilderWithScriban(request);
                 var hintName = $"{classSymbol.Name}_{Sanitize(templateName)}_PromptBuilder.g.cs";
                 context.AddSource(hintName, SourceText.From(builderSource, Encoding.UTF8));
-
-                // Capture metadata for a generated registry
-                metadataItems.Add(new PromptMetadata
-                {
-                    TemplateName = templateName,
-                    TemplatePath = resolvedPath ?? templatePath!,
-                    ContextTypeName = classSymbol.ToDisplayString(),
-                    Placeholders = [.. placeholders],
-                    ContextProperties = [.. properties],
-                    TemplateContent = templateContent
-                });
             }
 
             // After processing all templates for this class, warn about properties unused across all templates
@@ -196,8 +194,8 @@ public class PromptContextGenerator : IIncrementalGenerator
             {
                 Location? loc = null;
                 var propSymbol = classSymbol.GetMembers()
-                .OfType<IPropertySymbol>()
-                .FirstOrDefault(p => string.Equals(p.Name, u, System.StringComparison.OrdinalIgnoreCase));
+                    .OfType<IPropertySymbol>()
+                    .FirstOrDefault(p => p.Name == u);
                 var propLoc = propSymbol?.Locations.FirstOrDefault();
                 if (propLoc is not null)
                 {
@@ -209,9 +207,26 @@ public class PromptContextGenerator : IIncrementalGenerator
             }
         }
 
-        // Emit a C# metadata registry (no JSON files, no disk IO)
-        var registrySource = GenerateMetadataRegistryWithScriban(metadataItems);
-        context.AddSource("PromptMetadata.g.cs", SourceText.From(registrySource, Encoding.UTF8));
+        // Emit one static registrar that calls each builder Register()
+        var builderSourceRegister = GenerateRegisterWithScriban(compilation, requests);
+        var hintNameRegister = "PromptEngineRegister.g.cs";
+        context.AddSource(hintNameRegister, SourceText.From(builderSourceRegister, Encoding.UTF8));
+    }
+
+    private static string GenerateRegisterWithScriban(Compilation compilation, List<PromptBuilderRequest> requests)
+    {
+        var templateText = LoadEmbeddedTemplate("Register.sbncs");
+        var scribanTemplate = Template.Parse(templateText);
+
+        var modelItems = requests.Select(r => new
+        {
+            namespace_name = r.ContextClass.ContainingNamespace.ToDisplayString(),
+            builder_class_name = $"{r.TemplateName}PromptBuilder"
+        }).ToList();
+
+        var assemblyName = compilation.AssemblyName ?? compilation.Assembly.Identity.Name;
+        var model = new { assemblyName, items = modelItems };
+        return scribanTemplate.Render(model, member => member.Name, null);
     }
 
     private static void ReportDiagnostic(SourceProductionContext context, string id, DiagnosticSeverity severity, string message, Location? location)
@@ -233,8 +248,8 @@ public class PromptContextGenerator : IIncrementalGenerator
         foreach (var file in additionalFiles)
         {
             var normHay = Normalize(file.Path);
-            if (normHay.EndsWith(normNeedle, System.StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(System.IO.Path.GetFileName(normHay), System.IO.Path.GetFileName(normNeedle), System.StringComparison.OrdinalIgnoreCase))
+            if (normHay.EndsWith(normNeedle) ||
+                string.Equals(System.IO.Path.GetFileName(normHay), System.IO.Path.GetFileName(normNeedle), System.StringComparison.OrdinalIgnoreCase))
             {
                 resolvedPath = file.Path;
                 resolvedText = file.Content;
@@ -267,49 +282,48 @@ public class PromptContextGenerator : IIncrementalGenerator
         return sb.ToString();
     }
 
-    private static string GeneratePromptBuilderWithScriban(INamedTypeSymbol contextClass, string templateName, string templateContent, HashSet<string> placeholders)
+    // DTO to carry generation parameters
+    private sealed class PromptBuilderRequest
     {
-        var namespaceName = contextClass.ContainingNamespace.ToDisplayString();
-        var className = contextClass.Name;
-        var builderClassName = $"{templateName}PromptBuilder";
+        public INamedTypeSymbol ContextClass { get; set; }
+        public string TemplateName { get; set; }
+        public string TemplateContent { get; set; }
+        public HashSet<string> Placeholders { get; set; }
+        public HashSet<string> ContextProperties { get; set; }
+        public string TemplatePath { get; set; }
+    }
+
+    private static string GeneratePromptBuilderWithScriban(PromptBuilderRequest request)
+    {
+        var namespaceName = request.ContextClass.ContainingNamespace.ToDisplayString();
+        var className = request.ContextClass.Name;
+        var fullTypeName = request.ContextClass.ToDisplayString();
+        var builderClassName = $"{request.TemplateName}PromptBuilder";
 
         // Escape template for C# string
-        var escapedTemplate = EscapeForCSharp(templateContent);
-        var interpolated = ReplaceWithInterpolations(escapedTemplate, placeholders);
+        var escapedTemplate = EscapeForCSharp(request.TemplateContent);
+        var interpolated = ReplaceWithInterpolations(escapedTemplate, request.Placeholders);
 
         var templateText = LoadEmbeddedTemplate("PromptBuilder.sbncs");
         var scribanTemplate = Template.Parse(templateText);
+
+        // Pre-escape helper for model strings
+        string Esc(string v) => EscapeForCSharp(v ?? string.Empty);
+
         var model = new
         {
             namespace_name = namespaceName,
             builder_class_name = builderClassName,
-            template_name = templateName,
+            template_name = request.TemplateName,
             context_class_name = className,
+            context_full_type_name = fullTypeName,
+            template_path = Esc(request.TemplatePath),
+            placeholders = request.Placeholders.Select(Esc).ToList(),
+            context_properties = request.ContextProperties.Select(Esc).ToList(),
+            template_content = Esc(request.TemplateContent),
             escaped_template = escapedTemplate,
             interpolated_template = interpolated
         };
-        return scribanTemplate.Render(model, member => member.Name, null);
-    }
-
-    private static string GenerateMetadataRegistryWithScriban(List<PromptMetadata> items)
-    {
-        var templateText = LoadEmbeddedTemplate("MetadataRegistry.sbncs");
-        var scribanTemplate = Template.Parse(templateText);
-
-        // Pre-escape values for C# string literals
-        string Esc(string v) => EscapeForCSharp(v ?? string.Empty);
-
-        var modelItems = items.Select(m => new
-        {
-            template_name = Esc(m.TemplateName),
-            template_path = Esc(m.TemplatePath),
-            context_type_name = Esc(m.ContextTypeName),
-            placeholders = m.Placeholders.Select(Esc).ToList(),
-            context_properties = m.ContextProperties.Select(Esc).ToList(),
-            template_content = Esc(m.TemplateContent ?? string.Empty)
-        }).ToList();
-
-        var model = new { items = modelItems };
         return scribanTemplate.Render(model, member => member.Name, null);
     }
 

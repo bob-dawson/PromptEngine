@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PromptEngine.Agent.Extensions;
+using PromptEngine.Core.Runtime;
 using PromptEngine.Sample.Contexts;
 
 namespace PromptEngine.Sample;
@@ -21,15 +22,35 @@ class Program
             .Build();
 
         // Run samples
-        await RunSamples(host.Services);
+        if (!await RunSamples(host.Services))
+            return;
 
         await host.RunAsync();
     }
 
-    static async Task RunSamples(IServiceProvider services)
+    static async Task<bool> RunSamples(IServiceProvider services)
     {
+        //call generated register method to register all prompts
+        PromptEngineRegister.Register();
+
+        //runtime load prompts from directory
+        //you can access PromptMetadataRegistry.All and load prompt from other source like database
+        PromptMetadataRegistry.LoadPromptFromDir("Prompts");
+
+        //runtime validate all registered prompts
+        var result = PromptRuntimeValidator.ValidateAll();
+        if (!result.IsValid)
+        {
+            Console.WriteLine("Prompt validation failed:");
+            foreach (var error in result.Errors)
+            {
+                Console.WriteLine($"- {error}");
+            }
+            return false;
+        }
+
         Console.WriteLine("1. Summarize Prompt Example");
-        Console.WriteLine("--------------------------------");
+        Console.WriteLine("--------------------------------");      
 
         // Example1: Summarize
         var summarizeContext = new SummarizeContext
@@ -78,6 +99,6 @@ class Program
         Console.WriteLine(SummarizePromptBuilder.GetTemplate());
         Console.WriteLine("\n");
 
-        await Task.CompletedTask;
+        return true;
     }
 }
