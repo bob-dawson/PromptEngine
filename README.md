@@ -37,20 +37,29 @@ Add your prompt files to the project as additional files so the generator can fi
 
 ```xml
 <ItemGroup>
- <AdditionalFiles Include="Prompts/**/*.prompt.txt" />
+ <AdditionalFiles Include="Prompts/**/*.prompt.md" />
 </ItemGroup>
 ```
 
-###2. Create a Prompt Template
+###2. Create a Prompt Template (Markdown)
 
-Create a file `Prompts/Summarize.prompt.txt`:
+Create a file `Prompts/Summarize.prompt.md`:
+
+```markdown
+# Summarize Request for {UserName}
+
+## Input
 
 ```text
-Summarize the following text for user {UserName}:
+{InputText}
+```
 
-Text: {InputText}
+## Requirements
+- Provide a concise summary in {MaxWords} words or less.
+- Focus on key ideas and main points.
 
-Please provide a concise summary in {MaxWords} words or less.
+## Additional Instructions
+{Instructions}
 ```
 
 ###3. Define Context Class
@@ -58,12 +67,13 @@ Please provide a concise summary in {MaxWords} words or less.
 ```csharp
 using PromptEngine.Core.Attributes;
 
-[PromptContext("Prompts/Summarize.prompt.txt", TemplateName = "Summarize")]
+[PromptContext("Prompts/Summarize.prompt.md", TemplateName = "Summarize")]
 public class SummarizeContext
 {
  public string UserName { get; set; } = string.Empty;
  public string InputText { get; set; } = string.Empty;
  public string MaxWords { get; set; } = "100";
+ public string Instructions { get; set; } = "Focus on key points";
 }
 ```
 
@@ -76,7 +86,8 @@ var context = new SummarizeContext
 {
  UserName = "Alice",
  InputText = "AI is transforming industries...",
- MaxWords = "50"
+ MaxWords = "50",
+ Instructions = "Keep it neutral"
 };
 
 // Use the generated builder
@@ -116,7 +127,7 @@ if (!result.IsValid)
 {
  Console.WriteLine(result.ToString());
  throw new InvalidOperationException("Template validation failed");
- }
+}
 ```
 
 You can also load metadata from a specific assembly that contains generated metadata:
@@ -173,7 +184,8 @@ public class MyAgent
  {
  UserName = "User",
  InputText = text,
- MaxWords = "100"
+ MaxWords = "100",
+ Instructions = "Keep tone helpful"
  };
 
  string prompt = SummarizePromptBuilder.Build(context);
@@ -207,8 +219,8 @@ generator.SaveEditorHints(metadata, "./editor-hints");
 ```
 YourProject/
 ├── Prompts/
-│ ├── Summarize.prompt.txt
-│ └── Translate.prompt.txt
+│ ├── Summarize.prompt.md
+│ └── Translate.prompt.md
 ├── Contexts/
 │ ├── SummarizeContext.cs
 │ └── TranslateContext.cs
@@ -219,7 +231,7 @@ Add this to your project file to include prompt templates for the generator:
 
 ```xml
 <ItemGroup>
- <AdditionalFiles Include="Prompts/**/*.prompt.txt" />
+ <AdditionalFiles Include="Prompts/**/*.prompt.md" />
 </ItemGroup>
 ```
 
@@ -228,10 +240,10 @@ Add this to your project file to include prompt templates for the generator:
 ### Multiple Templates
 
 ```csharp
-[PromptContext("Prompts/Summarize.prompt.txt", TemplateName = "Summarize")]
+[PromptContext("Prompts/Summarize.prompt.md", TemplateName = "Summarize")]
 public class SummarizeContext { /* ... */ }
 
-[PromptContext("Prompts/Translate.prompt.txt", TemplateName = "Translate")]
+[PromptContext("Prompts/Translate.prompt.md", TemplateName = "Translate")]
 public class TranslateContext { /* ... */ }
 ```
 
@@ -261,7 +273,7 @@ Migration steps:
 2. Ensure your prompt templates are included via `AdditionalFiles` in your `.csproj`:
  ```xml
  <ItemGroup>
- <AdditionalFiles Include="Prompts/**/*.prompt.txt" />
+ <AdditionalFiles Include="Prompts/**/*.prompt.md" />
  </ItemGroup>
  ```
 3. No changes are required when using generated `*PromptBuilder` classes — build the project and the generator will run as part of the compilation.
@@ -271,7 +283,7 @@ Migration steps:
 - Targeting .NET10
  - You need .NET SDK that supports .NET10 and Visual Studio17.16+; otherwise you may see `NETSDK1209`. Use a supported IDE/SDK or temporarily target `net9.0`.
 - Analyzer does not find templates
- - Make sure your `.prompt.txt` files are included via `<AdditionalFiles />` and paths in `PromptContext` match (relative paths are recommended). The generator (now part of `PromptEngine.Core`) discovers these files at compile time.
+ - Make sure your `.prompt.md` files are included via `<AdditionalFiles />` and paths in `PromptContext` match (relative paths are recommended). The generator (now part of `PromptEngine.Core`) discovers these files at compile time.
 - CLI shows "No metadata found"
  - Ensure you built the project first, and that the DLL you point to (or its output folder) contains the generated registry. Running `promptengine list ./bin/Debug/net10.0` after `dotnet build` should list templates.
 - Placeholders not replaced at runtime

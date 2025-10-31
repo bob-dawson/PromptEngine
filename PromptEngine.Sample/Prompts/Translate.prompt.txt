@@ -1,5 +1,0 @@
-Translate the following text from {SourceLanguage} to {TargetLanguage}:
-
-{Text}
-
-Translation style: {Style}

@@ -6,17 +6,22 @@
 		<Nullable>enable</Nullable>
 		<LangVersion>latest</LangVersion>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<PackageId>PromptEngine.Core</PackageId>
+		<PackageId>PromptEngine.Analyzer</PackageId>
 		<Version>1.0.0</Version>
 		<Authors>Your Company</Authors>
 		<Description>A prompt engineering framework for C# Agent development with compile-time and runtime validation</Description>
 		<PackageTags>prompt;ai;agent;llm;source-generator</PackageTags>
+		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
 		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
-		<PackageReference Include="System.Text.Json" Version="9.0.10" />
-	</ItemGroup>	
+		<PackageReference Include="System.Text.Json" Version="6.0.11" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\PromptEngine\PromptEngine.csproj" />
+	</ItemGroup>
 
 </Project>

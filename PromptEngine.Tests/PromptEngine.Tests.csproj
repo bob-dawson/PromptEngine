@@ -18,9 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PromptEngine.Core\PromptEngine.Core.csproj" />
-    <ProjectReference Include="..\PromptEngine.Agent\PromptEngine.Agent.csproj" />
-    <ProjectReference Include="..\PromptEngine.Editor\PromptEngine.Editor.csproj" />
+    <ProjectReference Include="..\PromptEngine\PromptEngine.csproj" />
   </ItemGroup>
 
 </Project>
