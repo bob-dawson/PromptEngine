@@ -42,9 +42,8 @@ class Program
             MaxWords = "50",
             Instructions = "Focus on the key concepts and applications"
         };
-
         // Use the generated Prompt Builder
-        var summarizePrompt = SummarizePromptBuilder.Build(summarizeContext);
+        var summarizePrompt = summarizeContext.BuildSummarizePrompt();
         Console.WriteLine(summarizePrompt);
         Console.WriteLine("\n");
 

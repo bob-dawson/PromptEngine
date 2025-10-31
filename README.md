@@ -93,7 +93,7 @@ var context = new SummarizeContext
 };
 
 // Use the generated builder
-string prompt = SummarizePromptBuilder.Build(context);
+string prompt = context.BuildSummarizePrompt();
 Console.WriteLine(prompt);
 ```
 
@@ -267,8 +267,6 @@ var metadata = validator.GetLoadedMetadata();
 
 ## Troubleshooting
 
-- Targeting .NET10
- - You need .NET SDK that supports .NET10 and Visual Studio17.16+; otherwise you may see `NETSDK1209`. Use a supported IDE/SDK or temporarily target `net9.0`.
 - Analyzer does not find templates
  - Make sure your `.prompt.md` files are included via `<AdditionalFiles />` and paths in `PromptContext` match (relative paths are recommended). The generator (in `PromptEngine.Analyzer`) discovers these files at compile time.
 - CLI shows "No metadata found"
@@ -278,8 +276,7 @@ var metadata = validator.GetLoadedMetadata();
 
 ## Requirements
 
-- .NET7.0 or later
-- C#11 or later
+- .NET8.0 or later
 
 ## Contributing
 

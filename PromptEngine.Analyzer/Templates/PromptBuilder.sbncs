@@ -26,3 +26,19 @@ public static partial class {{ builder_class_name }}
         return "{{ escaped_template }}";
     }
 }
+
+/// <summary>
+/// Extension methods for {{ context_class_name }} to build {{ template_name }} prompts
+/// </summary>
+public static class {{ template_name }}PromptExtensions
+{
+    /// <summary>
+    /// Build a {{ template_name }} prompt from the context instance
+    /// </summary>
+    public static string Build{{ template_name }}Prompt(this {{ context_class_name }} context)
+    {
+        if (context == null) 
+            throw new System.ArgumentNullException(nameof(context));
+        return {{ builder_class_name }}.Build(context);
+    }
+}
