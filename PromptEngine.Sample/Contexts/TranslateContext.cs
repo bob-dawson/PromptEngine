@@ -6,6 +6,7 @@ namespace PromptEngine.Sample.Contexts;
 /// Translate Prompt Context
 /// </summary>
 [PromptContext("Prompts/Translate.prompt.md", TemplateName = "Translate")]
+[PromptContext("Prompts/TranslateWithUser.prompt.md", TemplateName = "TranslateWithUser")] // multiple templates for one context
 public class TranslateContext
 {
     /// <summary>
@@ -26,6 +27,10 @@ public class TranslateContext
     /// <summary>
     /// Translation Style
     /// </summary>
-    /// </summary>
     public string Style { get; set; } = "professional";
+
+    /// <summary>
+    /// Optional user display name for prompt personalization
+    /// </summary>
+    public string UserName { get; set; } = string.Empty;
 }

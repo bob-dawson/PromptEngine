@@ -1,4 +1,4 @@
-﻿	<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
@@ -10,11 +10,13 @@
 	<ItemGroup>
 	  <None Remove="Prompts\Summarize.prompt.md" />
 	  <None Remove="Prompts\Translate.prompt.md" />
+	  <None Remove="Prompts\TranslateWithUser.prompt.md" />
 	</ItemGroup>
 
 	<ItemGroup>
 	  <AdditionalFiles Include="Prompts\Summarize.prompt.md" />
 	  <AdditionalFiles Include="Prompts\Translate.prompt.md" />
+	  <AdditionalFiles Include="Prompts\TranslateWithUser.prompt.md" />
 	</ItemGroup>
 
 	<ItemGroup>

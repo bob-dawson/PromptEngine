@@ -57,15 +57,23 @@ class Program
             SourceLanguage = "English",
             TargetLanguage = "Chinese",
             Text = "Hello, how are you today?",
-            Style = "casual"
+            Style = "casual",
+            UserName = "Bob"
         };
 
         var translatePrompt = TranslatePromptBuilder.Build(translateContext);
         Console.WriteLine(translatePrompt);
         Console.WriteLine("\n");
 
-        // Example3: Get template content
-        Console.WriteLine("3. Template Content Example");
+        // Example3: Multiple templates for one context
+        Console.WriteLine("3. Translate With User Prompt Example (same context, different template)");
+        Console.WriteLine("--------------------------------");
+        var translateWithUserPrompt = TranslateWithUserPromptBuilder.Build(translateContext);
+        Console.WriteLine(translateWithUserPrompt);
+        Console.WriteLine("\n");
+
+        // Example4: Get template content
+        Console.WriteLine("4. Template Content Example");
         Console.WriteLine("--------------------------------");
         Console.WriteLine("Summarize Template:");
         Console.WriteLine(SummarizePromptBuilder.GetTemplate());
