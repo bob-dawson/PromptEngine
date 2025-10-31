@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="LICENSE" />
+    <File Path="PromptEngineeringFramework.md" />
+    <File Path="README.md" />
+  </Folder>
+  <Project Path="PromptEngine.Agent/PromptEngine.Agent.csproj" />
+  <Project Path="PromptEngine.Analyzer/PromptEngine.Analyzer.csproj" />
+  <Project Path="PromptEngine.Core/PromptEngine.Core.csproj" />
+  <Project Path="PromptEngine.Editor/PromptEngine.Editor.csproj" />
+  <Project Path="PromptEngine.Tests/PromptEngine.Tests.csproj" />
+  <Project Path="PromptEngine.Tools/PromptEngine.Tools.csproj" />
+</Solution>

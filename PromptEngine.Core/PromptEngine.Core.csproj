@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>PromptEngine.Core</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>Your Company</Authors>
+    <Description>A prompt engineering framework for C# Agent development with compile-time and runtime validation</Description>
+    <PackageTags>prompt;ai;agent;llm;source-generator</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup><!-- Core does not reference Roslyn directly anymore; common models/parsers only -->
+  
+    <Folder Include="SourceGenerators\" />
+  </ItemGroup>
+
+</Project>

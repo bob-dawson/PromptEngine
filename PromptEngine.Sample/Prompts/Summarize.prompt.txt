@@ -1,0 +1,7 @@
+Summarize the following text for user {UserName}:
+
+Text: {InputText}
+
+Please provide a concise summary in {MaxWords} words or less.
+
+Additional instructions: {Instructions}

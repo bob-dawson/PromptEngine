@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+  <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>promptengine</AssemblyName>
+    
+    <!-- Pack as global tool -->
+  <PackAsTool>true</PackAsTool>
+    <ToolCommandName>promptengine</ToolCommandName>
+    <PackageId>PromptEngine.Tools</PackageId>
+  <Version>1.0.0</Version>
+ <Authors>Your Company</Authors>
+    <Description>CLI tool for PromptEngine - validate and manage prompt templates</Description>
+    <PackageTags>prompt;ai;cli;tool;validation</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PromptEngine.Core\PromptEngine.Core.csproj" />
+  </ItemGroup>
+
+</Project>

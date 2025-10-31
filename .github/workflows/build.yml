@@ -1,0 +1,47 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main, develop ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '10.0.x'
+    
+    - name: Restore dependencies
+  run: dotnet restore
+    
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+    
+    - name: Test
+ run: dotnet test --no-build --configuration Release --verbosity normal
+    
+    - name: Install PromptEngine Tools
+      run: dotnet pack PromptEngine.Tools/PromptEngine.Tools.csproj -c Release
+    
+    - name: Validate Prompts in Sample
+      run: |
+        dotnet tool install --global --add-source ./PromptEngine.Tools/bin/Release PromptEngine.Tools
+     cd PromptEngine.Sample
+        dotnet build -c Release
+        promptengine validate ./bin/Release/net10.0
+    
+    - name: Pack NuGet packages
+      run: dotnet pack --no-build --configuration Release --output ./artifacts
+    
+    - name: Upload artifacts
+  uses: actions/upload-artifact@v3
+ with:
+        name: nuget-packages
+        path: ./artifacts/*.nupkg
