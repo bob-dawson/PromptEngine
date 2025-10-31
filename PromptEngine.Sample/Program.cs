@@ -11,16 +11,16 @@ class Program
     {
         Console.WriteLine("=== PromptEngine Sample Application ===\n");
 
-        // 创建 Host 并配置服务
+        // Create Host and configure services
         var host = Host.CreateDefaultBuilder(args)
-    .ConfigureServices((context, services) =>
-    {
-        // 注册 PromptEngine 服务
-        services.AddPromptEngine();
-    })
-     .Build();
+            .ConfigureServices((context, services) =>
+            {
+                // Register PromptEngine services
+                services.AddPromptEngine();
+            })
+            .Build();
 
-        // 运行示例
+        // Run samples
         await RunSamples(host.Services);
 
         await host.RunAsync();
@@ -31,24 +31,24 @@ class Program
         Console.WriteLine("1. Summarize Prompt Example");
         Console.WriteLine("--------------------------------");
 
-        // 示例 1: Summarize
+        // Example1: Summarize
         var summarizeContext = new SummarizeContext
         {
             UserName = "Alice",
             InputText = "Artificial Intelligence (AI) is revolutionizing the way we work and live. " +
-        "From healthcare to transportation, AI systems are being deployed across various industries. " +
-    "Machine learning, a subset of AI, enables computers to learn from data without being explicitly programmed. " +
- "Deep learning, a more advanced form of machine learning, uses neural networks to process complex patterns.",
+                "From healthcare to transportation, AI systems are being deployed across various industries. " +
+                "Machine learning, a subset of AI, enables computers to learn from data without being explicitly programmed. " +
+                "Deep learning, a more advanced form of machine learning, uses neural networks to process complex patterns.",
             MaxWords = "50",
             Instructions = "Focus on the key concepts and applications"
         };
 
-        // 使用生成的 Prompt Builder
+        // Use the generated Prompt Builder
         var summarizePrompt = SummarizePromptBuilder.Build(summarizeContext);
         Console.WriteLine(summarizePrompt);
         Console.WriteLine("\n");
 
-        // 示例 2: Translate
+        // Example2: Translate
         Console.WriteLine("2. Translate Prompt Example");
         Console.WriteLine("--------------------------------");
 
@@ -64,7 +64,7 @@ class Program
         Console.WriteLine(translatePrompt);
         Console.WriteLine("\n");
 
-        // 示例 3: 获取模板内容
+        // Example3: Get template content
         Console.WriteLine("3. Template Content Example");
         Console.WriteLine("--------------------------------");
         Console.WriteLine("Summarize Template:");
