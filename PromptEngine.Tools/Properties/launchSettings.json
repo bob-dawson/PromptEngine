@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "PromptEngine.Tools": {
+      "commandName": "Project",
+      "commandLineArgs": "validate D:\\AiSpider\\PromptEngine\\PromptEngine.Sample\\bin\\Debug\\net8.0"
+    }
+  }
+}

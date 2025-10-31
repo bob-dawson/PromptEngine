@@ -15,14 +15,19 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Compile Include="..\PromptEngine\Core\Models\PromptMetadata.cs" Link="PromptMetadata.cs" />
-	  <Compile Include="..\PromptEngine\Core\Parsers\PromptTemplateParser.cs" Link="PromptTemplateParser.cs" />
+		<Compile Include="..\PromptEngine\Core\Models\PromptMetadata.cs" Link="PromptMetadata.cs" />
+		<Compile Include="..\PromptEngine\Core\Parsers\PromptTemplateParser.cs" Link="PromptTemplateParser.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
 		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
 		<PackageReference Include="System.Text.Json" Version="6.0.11" />
+
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="Templates\*.sbncs" />
 	</ItemGroup>
 
 </Project>

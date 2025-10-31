@@ -6,6 +6,9 @@ using Microsoft.CodeAnalysis.Text;
 using PromptEngine.Core.Models;
 using PromptEngine.Core.Parsers;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using Scriban;
 
 namespace PromptEngine.Analyzer;
 
@@ -87,46 +90,19 @@ public class PromptContextGenerator : IIncrementalGenerator
             if (semanticModel.GetDeclaredSymbol(classDeclaration)
                     is not INamedTypeSymbol classSymbol) continue;
 
-            var attribute = classSymbol.GetAttributes()
-            .FirstOrDefault(a => a.AttributeClass?.ToDisplayString() == "PromptEngine.Core.Attributes.PromptContextAttribute");
-            if (attribute is null) continue;
+            // Find all PromptContextAttribute usages on this class
+            var attributes = classSymbol.GetAttributes()
+            .Where(a => a.AttributeClass?.ToDisplayString() == "PromptEngine.Core.Attributes.PromptContextAttribute")
+            .ToArray();
 
-            // Template path declared on attribute
-            var templatePath = attribute.ConstructorArguments[0].Value?.ToString();
-            if (string.IsNullOrWhiteSpace(templatePath))
-            {
-                ReportDiagnostic(context, "PE001", DiagnosticSeverity.Error,
-                $"Template path cannot be null or empty for class '{classSymbol.Name}'",
-                GetAttributeArgumentLocation(attribute,0) ?? classDeclaration.GetLocation());
-                continue;
-            }
+            if (attributes.Length ==0) continue;
 
-            // Template name, default to class name
-            var templateName = attribute.NamedArguments
-            .FirstOrDefault(a => a.Key == "TemplateName").Value.Value?.ToString()
-            ?? classSymbol.Name;
-
-            // Resolve template from AdditionalFiles
-            var templateContent = TryResolveTemplateFromAdditionalFiles(additionalFiles, templatePath!, out var resolvedPath, out var resolvedText);
-            if (templateContent is null)
-            {
-                ReportDiagnostic(context, "PE002", DiagnosticSeverity.Warning,
-                $"Template file '{templatePath}' not found in AdditionalFiles for class '{classSymbol.Name}'. Add it to <AdditionalFiles Include=\"...\" /> in your project.",
-                GetAttributeArgumentLocation(attribute,0) ?? classDeclaration.GetLocation());
-                continue;
-            }
-
-            // Extract placeholders
-            var placeholders = PromptTemplateParser.ExtractPlaceholders(templateContent);
-
-            // Collect public context properties
-            // NOTE: .ToHashSet is not available on older target frameworks; construct HashSet manually.
-            var properties = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var propertySymbols = classSymbol!.GetMembers()
+            // Collect public context properties once per class
+            var properties = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+            var propertySymbols = classSymbol.GetMembers()
                 .OfType<IPropertySymbol>()
                 .Where(p => p.DeclaredAccessibility == Accessibility.Public)
                 .Select(p => p.Name);
-
             foreach (var name in propertySymbols)
             {
                 if (name is not null)
@@ -135,32 +111,89 @@ public class PromptContextGenerator : IIncrementalGenerator
                 }
             }
 
-            // Validate
-            var (isValid, missing, unused) = PromptTemplateParser.ValidateTemplate(placeholders, properties);
+            // Track union of placeholders across all templates for this class
+            var unionPlaceholders = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
 
-            foreach (var m in missing)
+            foreach (var attribute in attributes)
             {
-                Location? loc = null;
-                if (resolvedText is not null && resolvedPath is not null)
+                // Template path declared on attribute
+                var templatePath = attribute.ConstructorArguments[0].Value?.ToString();
+                if (string.IsNullOrWhiteSpace(templatePath))
                 {
-                    var needle = "{" + m + "}";
-                    var idx = templateContent.IndexOf(needle, System.StringComparison.Ordinal);
-                    if (idx >=0)
-                    {
-                        var span = new TextSpan(idx, needle.Length);
-                        var lineSpan = resolvedText.Lines.GetLinePositionSpan(span);
-                        loc = Location.Create(resolvedPath, span, lineSpan);
-                    }
+                    ReportDiagnostic(context, "PE001", DiagnosticSeverity.Error,
+                    $"Template path cannot be null or empty for class '{classSymbol.Name}'",
+                    GetAttributeArgumentLocation(attribute,0) ?? classDeclaration.GetLocation());
+                    continue;
                 }
 
-                ReportDiagnostic(context, "PE003", DiagnosticSeverity.Error,
-                $"Template uses undefined placeholder '{{{m}}}' not found in context class '{classSymbol.Name}'",
-                loc ?? classDeclaration.GetLocation());
+                // Template name, default to the class name
+                var templateName = attribute.NamedArguments
+                .FirstOrDefault(a => a.Key == "TemplateName").Value.Value?.ToString()
+                ?? classSymbol.Name;
+
+                // Resolve template from AdditionalFiles
+                var templateContent = TryResolveTemplateFromAdditionalFiles(additionalFiles, templatePath!, out var resolvedPath, out var resolvedText);
+                if (templateContent is null)
+                {
+                    ReportDiagnostic(context, "PE002", DiagnosticSeverity.Warning,
+                    $"Template file '{templatePath}' not found in AdditionalFiles for class '{classSymbol.Name}'. Add it to <AdditionalFiles Include=\"...\" /> in your project.",
+                    GetAttributeArgumentLocation(attribute,0) ?? classDeclaration.GetLocation());
+                    continue;
+                }
+
+                // Extract placeholders for this template
+                var placeholders = PromptTemplateParser.ExtractPlaceholders(templateContent);
+                foreach (var ph in placeholders)
+                {
+                    unionPlaceholders.Add(ph);
+                }
+
+                // Validate placeholders vs properties
+                var (isValid, missing, _) = PromptTemplateParser.ValidateTemplate(placeholders, properties);
+
+                foreach (var m in missing)
+                {
+                    Location? loc = null;
+                    if (resolvedText is not null && resolvedPath is not null)
+                    {
+                        var needle = "{" + m + "}";
+                        var idx = templateContent.IndexOf(needle, System.StringComparison.Ordinal);
+                        if (idx >=0)
+                        {
+                            var span = new TextSpan(idx, needle.Length);
+                            var lineSpan = resolvedText.Lines.GetLinePositionSpan(span);
+                            loc = Location.Create(resolvedPath, span, lineSpan);
+                        }
+                    }
+
+                    ReportDiagnostic(context, "PE003", DiagnosticSeverity.Error,
+                    $"Template uses undefined placeholder '{{{m}}}' not found in context class '{classSymbol.Name}'",
+                    loc ?? classDeclaration.GetLocation());
+                }
+
+                if (!isValid) continue;
+
+                // Generate strongly-typed builder for this template via Scriban
+                var builderSource = GeneratePromptBuilderWithScriban(classSymbol, templateName, templateContent, placeholders);
+                var hintName = $"{classSymbol.Name}_{Sanitize(templateName)}_PromptBuilder.g.cs";
+                context.AddSource(hintName, SourceText.From(builderSource, Encoding.UTF8));
+
+                // Capture metadata for a generated registry
+                metadataItems.Add(new PromptMetadata
+                {
+                    TemplateName = templateName,
+                    TemplatePath = resolvedPath ?? templatePath!,
+                    ContextTypeName = classSymbol.ToDisplayString(),
+                    Placeholders = [.. placeholders],
+                    ContextProperties = [.. properties],
+                    TemplateContent = templateContent
+                });
             }
 
-            foreach (var u in unused)
+            // After processing all templates for this class, warn about properties unused across all templates
+            var unusedOverall = properties.Except(unionPlaceholders, System.StringComparer.OrdinalIgnoreCase);
+            foreach (var u in unusedOverall)
             {
-                // Try to point to the property declaration location if possible
                 Location? loc = null;
                 var propSymbol = classSymbol.GetMembers()
                 .OfType<IPropertySymbol>()
@@ -170,36 +203,15 @@ public class PromptContextGenerator : IIncrementalGenerator
                 {
                     loc = propLoc;
                 }
-
                 ReportDiagnostic(context, "PE004", DiagnosticSeverity.Warning,
-                $"Context property '{u}' in class '{classSymbol.Name}' is not used in template",
+                $"Context property '{u}' in class '{classSymbol.Name}' is not used in any template",
                 loc ?? classDeclaration.GetLocation());
             }
-
-            if (!isValid) continue;
-
-            // Generate strongly-typed builder
-            var source = GeneratePromptBuilder(classSymbol!, templateName, templateContent, placeholders);
-            context.AddSource($"{classSymbol.Name}_PromptBuilder.g.cs", SourceText.From(source, Encoding.UTF8));
-
-            // Capture metadata for a generated registry
-            metadataItems.Add(new PromptMetadata
-            {
-                TemplateName = templateName,
-                TemplatePath = resolvedPath ?? templatePath!,
-                ContextTypeName = classSymbol.ToDisplayString(),
-                Placeholders = [.. placeholders],
-                ContextProperties = [.. properties],
-                TemplateContent = templateContent
-            });
         }
 
         // Emit a C# metadata registry (no JSON files, no disk IO)
-        if (metadataItems.Count >0)
-        {
-            var registrySource = GenerateMetadataRegistry(metadataItems);
-            context.AddSource("PromptMetadata.g.cs", SourceText.From(registrySource, Encoding.UTF8));
-        }
+        var registrySource = GenerateMetadataRegistryWithScriban(metadataItems);
+        context.AddSource("PromptMetadata.g.cs", SourceText.From(registrySource, Encoding.UTF8));
     }
 
     private static void ReportDiagnostic(SourceProductionContext context, string id, DiagnosticSeverity severity, string message, Location? location)
@@ -243,51 +255,78 @@ public class PromptContextGenerator : IIncrementalGenerator
     private static string Normalize(string path)
     => path.Replace('\\', '/').TrimStart('.', '/');
 
-    private static string GeneratePromptBuilder(INamedTypeSymbol contextClass, string templateName, string templateContent, HashSet<string> placeholders)
+    private static string Sanitize(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "_";
+        var sb = new StringBuilder(name.Length);
+        foreach (var ch in name)
+        {
+            if (char.IsLetterOrDigit(ch) || ch == '_') sb.Append(ch);
+            else sb.Append('_');
+        }
+        return sb.ToString();
+    }
+
+    private static string GeneratePromptBuilderWithScriban(INamedTypeSymbol contextClass, string templateName, string templateContent, HashSet<string> placeholders)
     {
         var namespaceName = contextClass.ContainingNamespace.ToDisplayString();
         var className = contextClass.Name;
         var builderClassName = $"{templateName}PromptBuilder";
 
-        // Escape template
-        var escapedTemplate = templateContent
-        .Replace("\\", "\\\\")
-        .Replace("\"", "\\\"")
-        .Replace("\r\n", "\n")
-        .Replace("\r", "")
-        .Replace("\n", "\\n");
-
-        var sb = new StringBuilder();
-        sb.AppendLine("// <auto-generated/>");
-        sb.AppendLine("#nullable enable");
-        sb.AppendLine();
-        sb.AppendLine($"namespace {namespaceName};");
-        sb.AppendLine();
-        sb.AppendLine("/// <summary>");
-        sb.AppendLine($"/// Prompt builder for {templateName}");
-        sb.AppendLine("/// </summary>");
-        sb.AppendLine($"public static partial class {builderClassName}");
-        sb.AppendLine("{");
-        sb.AppendLine(" /// <summary>");
-        sb.AppendLine($" /// Build prompt from {className} context");
-        sb.AppendLine(" /// </summary>");
-        sb.AppendLine($" public static string Build({className} context)");
-        sb.AppendLine(" {");
-        sb.AppendLine(" if (context == null) throw new System.ArgumentNullException(nameof(context));");
-        sb.AppendLine();
+        // Escape template for C# string
+        var escapedTemplate = EscapeForCSharp(templateContent);
         var interpolated = ReplaceWithInterpolations(escapedTemplate, placeholders);
-        sb.AppendLine($" return $\"{interpolated}\";");
-        sb.AppendLine(" }");
-        sb.AppendLine();
-        sb.AppendLine(" /// <summary>");
-        sb.AppendLine(" /// Get template content");
-        sb.AppendLine(" /// </summary>");
-        sb.AppendLine(" public static string GetTemplate()");
-        sb.AppendLine(" {");
-        sb.AppendLine($" return \"{escapedTemplate}\";");
-        sb.AppendLine(" }");
-        sb.AppendLine("}");
-        return sb.ToString();
+
+        var templateText = LoadEmbeddedTemplate("PromptBuilder.sbncs");
+        var scribanTemplate = Template.Parse(templateText);
+        var model = new
+        {
+            namespace_name = namespaceName,
+            builder_class_name = builderClassName,
+            template_name = templateName,
+            context_class_name = className,
+            escaped_template = escapedTemplate,
+            interpolated_template = interpolated
+        };
+        return scribanTemplate.Render(model, member => member.Name, null);
+    }
+
+    private static string GenerateMetadataRegistryWithScriban(List<PromptMetadata> items)
+    {
+        var templateText = LoadEmbeddedTemplate("MetadataRegistry.sbncs");
+        var scribanTemplate = Template.Parse(templateText);
+
+        // Pre-escape values for C# string literals
+        string Esc(string v) => EscapeForCSharp(v ?? string.Empty);
+
+        var modelItems = items.Select(m => new
+        {
+            template_name = Esc(m.TemplateName),
+            template_path = Esc(m.TemplatePath),
+            context_type_name = Esc(m.ContextTypeName),
+            placeholders = m.Placeholders.Select(Esc).ToList(),
+            context_properties = m.ContextProperties.Select(Esc).ToList(),
+            template_content = Esc(m.TemplateContent ?? string.Empty)
+        }).ToList();
+
+        var model = new { items = modelItems };
+        return scribanTemplate.Render(model, member => member.Name, null);
+    }
+
+    private static string LoadEmbeddedTemplate(string fileName)
+    {
+        var asm = typeof(PromptContextGenerator).GetTypeInfo().Assembly;
+        var resourceName = asm.GetManifestResourceNames()
+        .FirstOrDefault(n => n.EndsWith($"Templates.{fileName}", System.StringComparison.OrdinalIgnoreCase));
+        if (resourceName is null)
+        {
+            throw new System.InvalidOperationException($"Embedded template '{fileName}' not found in resources.");
+        }
+        using (var stream = asm.GetManifestResourceStream(resourceName)!)
+        using (var reader = new System.IO.StreamReader(stream))
+        {
+            return reader.ReadToEnd();
+        }
     }
 
     private static string ReplaceWithInterpolations(string escapedTemplate, HashSet<string> placeholders)
@@ -300,55 +339,11 @@ public class PromptContextGenerator : IIncrementalGenerator
         return result;
     }
 
-    private static string GenerateMetadataRegistry(List<PromptMetadata> items)
-    {
-        var sb = new StringBuilder();
-        sb.AppendLine("// <auto-generated/>");
-        sb.AppendLine("#nullable enable");
-        sb.AppendLine("using System.Collections.Generic;");
-        sb.AppendLine("using PromptEngine.Core.Models;");
-        sb.AppendLine();
-        sb.AppendLine("namespace PromptEngine.Generated;");
-        sb.AppendLine();
-        sb.AppendLine("/// <summary>Generated registry that exposes prompt metadata at runtime.</summary>");
-        sb.AppendLine("internal static class PromptMetadataRegistry");
-        sb.AppendLine("{");
-        sb.AppendLine(" internal static IReadOnlyList<PromptMetadata> All { get; } = new List<PromptMetadata>");
-        sb.AppendLine(" {");
-        for (int i =0; i < items.Count; i++)
-        {
-            var m = items[i];
-            sb.AppendLine(" new PromptMetadata");
-            sb.AppendLine(" {");
-            sb.AppendLine($" TemplateName = \"{Escape(m.TemplateName)}\",");
-            sb.AppendLine($" TemplatePath = \"{Escape(m.TemplatePath)}\",");
-            sb.AppendLine($" ContextTypeName = \"{Escape(m.ContextTypeName)}\",");
-            sb.AppendLine(" Placeholders = new List<string>");
-            sb.AppendLine(" {");
-            foreach (var p in m.Placeholders)
-            {
-                sb.AppendLine($" \"{Escape(p)}\",");
-            }
-            sb.AppendLine(" },");
-            sb.AppendLine(" ContextProperties = new List<string>");
-            sb.AppendLine(" {");
-            foreach (var p in m.ContextProperties)
-            {
-                sb.AppendLine($" \"{Escape(p)}\",");
-            }
-            sb.AppendLine(" },");
-            var templ = (m.TemplateContent ?? string.Empty)
-            .Replace("\\", "\\\\")
-            .Replace("\"", "\\\"")
-            .Replace("\r\n", "\n").Replace("\r", "").Replace("\n", "\\n");
-            sb.AppendLine($" TemplateContent = \"{templ}\"");
-            sb.AppendLine(i == items.Count -1 ? " }" : " },");
-        }
-        sb.AppendLine("};");
-        sb.AppendLine("}");
-        return sb.ToString();
-    }
-
-    private static string Escape(string value)
-    => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+    private static string EscapeForCSharp(string s)
+    => (s ?? string.Empty)
+    .Replace("\\", "\\\\")
+    .Replace("\"", "\\\"")
+    .Replace("\r\n", "\n")
+    .Replace("\r", "")
+    .Replace("\n", "\\n");
 }
