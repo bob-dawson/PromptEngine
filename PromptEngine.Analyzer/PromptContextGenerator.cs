@@ -7,7 +7,7 @@ using PromptEngine.Core.Models;
 using PromptEngine.Core.Parsers;
 using System.Collections.Generic;
 
-namespace PromptEngine.Core.SourceGenerators;
+namespace PromptEngine.Analyzer;
 
 [Generator]
 public class PromptContextGenerator : IIncrementalGenerator
