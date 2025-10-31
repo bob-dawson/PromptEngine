@@ -46,7 +46,7 @@ public class PromptContextGenerator : IIncrementalGenerator
     }
 
     private static bool IsSyntaxTargetForGeneration(SyntaxNode node)
-    => node is ClassDeclarationSyntax cds && cds.AttributeLists.Count > 0;
+    => node is ClassDeclarationSyntax cds && cds.AttributeLists.Count >0;
 
     private static ClassDeclarationSyntax? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
     {
@@ -97,7 +97,7 @@ public class PromptContextGenerator : IIncrementalGenerator
             {
                 ReportDiagnostic(context, "PE001", DiagnosticSeverity.Error,
                 $"Template path cannot be null or empty for class '{classSymbol.Name}'",
-                classDeclaration.GetLocation());
+                GetAttributeArgumentLocation(attribute,0) ?? classDeclaration.GetLocation());
                 continue;
             }
 
@@ -107,13 +107,12 @@ public class PromptContextGenerator : IIncrementalGenerator
             ?? classSymbol.Name;
 
             // Resolve template from AdditionalFiles
-            var templateContent = TryResolveTemplateFromAdditionalFiles(additionalFiles, templatePath!, out var resolvedPath);
+            var templateContent = TryResolveTemplateFromAdditionalFiles(additionalFiles, templatePath!, out var resolvedPath, out var resolvedText);
             if (templateContent is null)
             {
                 ReportDiagnostic(context, "PE002", DiagnosticSeverity.Warning,
-                $"Template file '{templatePath}' not found in AdditionalFiles for class '{classSymbol.Name}'. " +
-                "Add it to <AdditionalFiles Include=\"...\" /> in your project.",
-                classDeclaration.GetLocation());
+                $"Template file '{templatePath}' not found in AdditionalFiles for class '{classSymbol.Name}'. Add it to <AdditionalFiles Include=\"...\" /> in your project.",
+                GetAttributeArgumentLocation(attribute,0) ?? classDeclaration.GetLocation());
                 continue;
             }
 
@@ -141,16 +140,40 @@ public class PromptContextGenerator : IIncrementalGenerator
 
             foreach (var m in missing)
             {
+                Location? loc = null;
+                if (resolvedText is not null && resolvedPath is not null)
+                {
+                    var needle = "{" + m + "}";
+                    var idx = templateContent.IndexOf(needle, System.StringComparison.Ordinal);
+                    if (idx >=0)
+                    {
+                        var span = new TextSpan(idx, needle.Length);
+                        var lineSpan = resolvedText.Lines.GetLinePositionSpan(span);
+                        loc = Location.Create(resolvedPath, span, lineSpan);
+                    }
+                }
+
                 ReportDiagnostic(context, "PE003", DiagnosticSeverity.Error,
                 $"Template uses undefined placeholder '{{{m}}}' not found in context class '{classSymbol.Name}'",
-                classDeclaration.GetLocation());
+                loc ?? classDeclaration.GetLocation());
             }
 
             foreach (var u in unused)
             {
-                ReportDiagnostic(context, "PE004", DiagnosticSeverity.Info,
+                // Try to point to the property declaration location if possible
+                Location? loc = null;
+                var propSymbol = classSymbol.GetMembers()
+                .OfType<IPropertySymbol>()
+                .FirstOrDefault(p => string.Equals(p.Name, u, System.StringComparison.OrdinalIgnoreCase));
+                var propLoc = propSymbol?.Locations.FirstOrDefault();
+                if (propLoc is not null)
+                {
+                    loc = propLoc;
+                }
+
+                ReportDiagnostic(context, "PE004", DiagnosticSeverity.Warning,
                 $"Context property '{u}' in class '{classSymbol.Name}' is not used in template",
-                classDeclaration.GetLocation());
+                loc ?? classDeclaration.GetLocation());
             }
 
             if (!isValid) continue;
@@ -172,7 +195,7 @@ public class PromptContextGenerator : IIncrementalGenerator
         }
 
         // Emit a C# metadata registry (no JSON files, no disk IO)
-        if (metadataItems.Count > 0)
+        if (metadataItems.Count >0)
         {
             var registrySource = GenerateMetadataRegistry(metadataItems);
             context.AddSource("PromptMetadata.g.cs", SourceText.From(registrySource, Encoding.UTF8));
@@ -181,27 +204,40 @@ public class PromptContextGenerator : IIncrementalGenerator
 
     private static void ReportDiagnostic(SourceProductionContext context, string id, DiagnosticSeverity severity, string message, Location? location)
     {
-        var descriptor = new DiagnosticDescriptor(id, message, message, "PromptEngine", severity, true);
+        // DiagnosticDescriptor.MessageFormat is a composite string and must escape braces.
+        static string EscapeBraces(string s) => s.Replace("{", "{{").Replace("}", "}}");
+
+        var safeMessage = EscapeBraces(message);
+        var descriptor = new DiagnosticDescriptor(id, safeMessage, safeMessage, "PromptEngine", severity, true);
         context.ReportDiagnostic(Diagnostic.Create(descriptor, location));
     }
 
-    private static string? TryResolveTemplateFromAdditionalFiles(ImmutableArray<AdditionalFileInfo> additionalFiles, string templatePath, out string? resolvedPath)
+    private static string? TryResolveTemplateFromAdditionalFiles(ImmutableArray<AdditionalFileInfo> additionalFiles, string templatePath, out string? resolvedPath, out SourceText? resolvedText)
     {
         resolvedPath = null;
+        resolvedText = null;
         var normNeedle = Normalize(templatePath);
 
         foreach (var file in additionalFiles)
         {
             var normHay = Normalize(file.Path);
-            if (normHay.EndsWith(normNeedle, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(System.IO.Path.GetFileName(normHay), System.IO.Path.GetFileName(normNeedle), StringComparison.OrdinalIgnoreCase))
+            if (normHay.EndsWith(normNeedle, System.StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(System.IO.Path.GetFileName(normHay), System.IO.Path.GetFileName(normNeedle), System.StringComparison.OrdinalIgnoreCase))
             {
                 resolvedPath = file.Path;
+                resolvedText = file.Content;
                 return file.Content?.ToString();
             }
         }
 
         return null;
+    }
+
+    private static Location? GetAttributeArgumentLocation(AttributeData attribute, int argIndex)
+    {
+        var syntax = attribute.ApplicationSyntaxReference?.GetSyntax() as AttributeSyntax;
+        var arg = syntax?.ArgumentList?.Arguments.ElementAtOrDefault(argIndex);
+        return arg?.GetLocation();
     }
 
     private static string Normalize(string path)
@@ -279,7 +315,7 @@ public class PromptContextGenerator : IIncrementalGenerator
         sb.AppendLine("{");
         sb.AppendLine(" internal static IReadOnlyList<PromptMetadata> All { get; } = new List<PromptMetadata>");
         sb.AppendLine(" {");
-        for (int i = 0; i < items.Count; i++)
+        for (int i =0; i < items.Count; i++)
         {
             var m = items[i];
             sb.AppendLine(" new PromptMetadata");
@@ -306,9 +342,9 @@ public class PromptContextGenerator : IIncrementalGenerator
             .Replace("\"", "\\\"")
             .Replace("\r\n", "\n").Replace("\r", "").Replace("\n", "\\n");
             sb.AppendLine($" TemplateContent = \"{templ}\"");
-            sb.AppendLine(i == items.Count - 1 ? " }" : " },");
+            sb.AppendLine(i == items.Count -1 ? " }" : " },");
         }
-        sb.AppendLine(" };");
+        sb.AppendLine("};");
         sb.AppendLine("}");
         return sb.ToString();
     }

@@ -5,7 +5,7 @@ A comprehensive prompt engineering framework for C# Agent/LLM development with c
 ## Features
 
 - Compile-time validation (Analyzer) - Catch template errors during build
-- Runtime validation (Core) - Verify template changes in production or CI
+- Runtime validation - Verify template changes in production or CI
 - Editor hints - IDE support with variable autocomplete
 - Type-safe - Strong typing for context and templates
 - Agent Framework integration - Works with Microsoft Agent Framework and Semantic Kernel
@@ -16,9 +16,8 @@ A comprehensive prompt engineering framework for C# Agent/LLM development with c
 
 | Package | Description | NuGet |
 |---------|-------------|-------|
-| `PromptEngine.Core` | Common models, parsers, runtime validation and the compile-time analyzer/source-generator (compile-time) | [![NuGet](https://img.shields.io/nuget/v/PromptEngine.Core.svg)](https://www.nuget.org/packages/PromptEngine.Core/) |
-| `PromptEngine.Agent` | Agent framework integration | [![NuGet](https://img.shields.io/nuget/v/PromptEngine.Agent.svg)](https://www.nuget.org/packages/PromptEngine.Agent/) |
-| `PromptEngine.Editor` | Editor hint generation | [![NuGet](https://img.shields.io/nuget/v/PromptEngine.Editor.svg)](https://www.nuget.org/packages/PromptEngine.Editor/) |
+| `PromptEngine` | Unified runtime library: common models, parsers, runtime validation, Agent integration, and editor hint generation | [![NuGet](https://img.shields.io/nuget/v/PromptEngine.svg)](https://www.nuget.org/packages/PromptEngine/) |
+| `PromptEngine.Analyzer` | Roslyn analyzer + source generator (compile-time) | [![NuGet](https://img.shields.io/nuget/v/PromptEngine.Analyzer.svg)](https://www.nuget.org/packages/PromptEngine.Analyzer/) |
 | `PromptEngine.Tools` | CLI validation tool | [![NuGet](https://img.shields.io/nuget/v/PromptEngine.Tools.svg)](https://www.nuget.org/packages/PromptEngine.Tools/) |
 
 ## Quick Start
@@ -26,20 +25,23 @@ A comprehensive prompt engineering framework for C# Agent/LLM development with c
 ###1. Install Packages
 
 ```bash
-# Runtime validator, shared models/parsers and compile-time analyzer/source-generator
-dotnet add package PromptEngine.Core
+# Unified runtime (models, parsers, runtime validation, agent integration, editor support)
+dotnet add package PromptEngine
 
-# Optional: agent integration
-dotnet add package PromptEngine.Agent
+# Analyzer + source generator (compile-time validation and builder generation)
+dotnet add package PromptEngine.Analyzer
 ```
 
-Add your prompt files to the project as additional files so the generator can find them:
+Add your prompt files to the project as additional files so the generator can find them. 
+1. You can use Visual Studio to set each prompt file build action as `C# analyzer additional file` in the property window or
+2. You can edit the project file:
 
 ```xml
 <ItemGroup>
  <AdditionalFiles Include="Prompts/**/*.prompt.md" />
 </ItemGroup>
 ```
+Then all files under `Prompts/` with `.prompt.md` extension will be included.
 
 ###2. Create a Prompt Template (Markdown)
 
@@ -79,7 +81,7 @@ public class SummarizeContext
 
 ###4. Build and Use
 
-The source generator (part of `PromptEngine.Core`) creates a `SummarizePromptBuilder` class:
+The source generator (in `PromptEngine.Analyzer`) creates a `SummarizePromptBuilder` class:
 
 ```csharp
 var context = new SummarizeContext
@@ -97,7 +99,7 @@ Console.WriteLine(prompt);
 
 ## Compile-time Validation
 
-With the analyzer/source-generator included in `PromptEngine.Core`, template issues are reported at build time.
+With the analyzer/source-generator provided by `PromptEngine.Analyzer`, template issues are reported at build time.
 
 If your template uses undefined placeholders, you'll get a compile error:
 
@@ -113,7 +115,7 @@ info PE004: Context property 'UnusedProperty' in class 'SummarizeContext' is not
 
 ## Runtime Validation
 
-Validate templates at runtime or in CI/CD using `PromptEngine.Core.Runtime`:
+Validate templates at runtime or in CI/CD using the unified `PromptEngine` package:
 
 ```csharp
 using PromptEngine.Core.Runtime;
@@ -207,7 +209,7 @@ validator.LoadMetadataFromDirectory("./bin/Debug/net10.0");
 var metadata = validator.GetLoadedMetadata().ToList();
 
 var generator = new EditorHintGenerator();
-generator.SaveEditorHints(metadata, "./editor-hints");
+int files = generator.SaveEditorHints(metadata, "./editor-hints");
 
 // Outputs:
 // - prompt-hints.json (for generic editors)
@@ -263,27 +265,12 @@ validator.LoadMetadataFromAssembly("./bin/Debug/net10.0/YourProject.dll");
 var metadata = validator.GetLoadedMetadata();
 ```
 
-## Migration Guide (Analyzer merged)
-
-If you used an earlier version where the analyzer/source-generator was distributed as a separate package (`PromptEngine.Analyzer`), it is now merged back into `PromptEngine.Core`.
-
-Migration steps:
-
-1. If you previously added a package reference to `PromptEngine.Analyzer`, you can remove it. The analyzer/source-generator is now included in `PromptEngine.Core`.
-2. Ensure your prompt templates are included via `AdditionalFiles` in your `.csproj`:
- ```xml
- <ItemGroup>
- <AdditionalFiles Include="Prompts/**/*.prompt.md" />
- </ItemGroup>
- ```
-3. No changes are required when using generated `*PromptBuilder` classes — build the project and the generator will run as part of the compilation.
-
 ## Troubleshooting
 
 - Targeting .NET10
  - You need .NET SDK that supports .NET10 and Visual Studio17.16+; otherwise you may see `NETSDK1209`. Use a supported IDE/SDK or temporarily target `net9.0`.
 - Analyzer does not find templates
- - Make sure your `.prompt.md` files are included via `<AdditionalFiles />` and paths in `PromptContext` match (relative paths are recommended). The generator (now part of `PromptEngine.Core`) discovers these files at compile time.
+ - Make sure your `.prompt.md` files are included via `<AdditionalFiles />` and paths in `PromptContext` match (relative paths are recommended). The generator (in `PromptEngine.Analyzer`) discovers these files at compile time.
 - CLI shows "No metadata found"
  - Ensure you built the project first, and that the DLL you point to (or its output folder) contains the generated registry. Running `promptengine list ./bin/Debug/net10.0` after `dotnet build` should list templates.
 - Placeholders not replaced at runtime
