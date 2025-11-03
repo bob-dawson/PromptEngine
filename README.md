@@ -77,7 +77,7 @@ public class SummarizeContext
 
 ### 4. Build and Use
 
-The source generator creates a `SummarizePromptBuilder` class:
+The source generator creates a `SummarizePromptBuilder` class and a `SummarizePromptExtensions` extension class:
 
 ```csharp
 var context = new SummarizeContext
@@ -90,6 +90,8 @@ var context = new SummarizeContext
 
 // Use the generated builder
 string prompt = context.BuildSummarizePrompt();
+// or use below:
+//string prompt = SummarizePromptBuilder.Build(context)
 Console.WriteLine(prompt);
 ```
 
@@ -298,14 +300,14 @@ MIT License — see the LICENSE file for details.
 
 ## Links
 
-- Documentation: https://github.com/yourorg/promptengine/wiki
+- Documentation: https://github.com/bob-dawson/promptengine/wiki
 - Sample Projects: ./PromptEngine.Sample
-- Issue Tracker: https://github.com/yourorg/promptengine/issues
+- Issue Tracker: https://github.com/bob-dawson/promptengine/issues
 
 ## Support
 
 For questions and support:
-- GitHub Issues: https://github.com/yourorg/promptengine/issues
+- GitHub Issues: https://github.com/bob-dawson/promptengine/issues
 - Email: support@yourcompany.com
 
 ---

@@ -2,6 +2,7 @@ using Microsoft.Extensions.Hosting;
 using PromptEngine.Agent.Extensions;
 using PromptEngine.Core.Runtime;
 using PromptEngine.Sample.Contexts;
+using Stubble.Core.Contexts;
 
 namespace PromptEngine.Sample;
 
@@ -65,6 +66,8 @@ class Program
         
         // Use the generated Prompt Builder
         var summarizePrompt = summarizeContext.BuildSummarizePrompt();
+        // or use the static builder method
+        //var summarizePrompt = SummarizePromptBuilder.Build(summarizeContext);
         Console.WriteLine(summarizePrompt);
         Console.WriteLine("\n");
 
