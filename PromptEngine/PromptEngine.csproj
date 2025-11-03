@@ -8,10 +8,10 @@
 		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<PackageId>PromptEngine</PackageId>
 		<AssemblyName>PromptEngine</AssemblyName>
-		<Version>1.0.0</Version>
-		<Authors>Your Company</Authors>
-		<Description>Runtime library for PromptEngine - A prompt engineering framework for C# Agent development.</Description>
-		<PackageTags>prompt;ai;agent;llm;mustache</PackageTags>
+		<Version>0.5.0</Version>
+		<Authors>Bob Dawson</Authors>
+		<Description>A comprehensive prompt engineering framework for C# Agent/LLM development with compile-time validation, code generation and runtime safety checks. Includes runtime library and Roslyn analyzer/source generator.</Description>
+		<PackageTags>prompt;ai;agent;llm;source-generator;analyzer;roslyn;mustache</PackageTags>
 	</PropertyGroup>
 
 	<ItemGroup>
