@@ -1,21 +1,21 @@
 # PromptEngine - Prompt Engineering Framework for C#
 
-A comprehensive prompt engineering framework for C# Agent/LLM development with compile-time validation, code generation and runtime safety checks.
+A comprehensive prompt-engineering framework for C# agent/LLM development, with compile-time validation, code generation, and runtime safety checks.
 
 ## Features
 
-- Compile-time validation (Analyzer) - Catch template errors during build
-- Runtime validation - Verify template changes in production or CI
-- Type-safe - Strong typing for context and templates
-- **Mustache templating** - Industry-standard template syntax with logic support
-- Agent Framework integration - Works with Microsoft Agent Framework and Semantic Kernel
-- Multi-template support - Manage multiple prompts in one project
+- Compile-time validation (analyzer) — catch template errors at build time
+- Runtime validation — verify template changes in production or CI
+- Type-safe — strong typing for context and templates
+- **Mustache templating** — industry-standard template syntax
+- Agent Framework integration — works with Microsoft Agent Framework and Semantic Kernel
+- Multi-template support — manage multiple prompts in one project
 
 ## Packages
 
 | Package | Description | NuGet |
 |---------|-------------|-------|
-| `PromptEngine` | Complete package including runtime library, Roslyn analyzer and source generator | [![NuGet](https://img.shields.io/nuget/v/PromptEngine.svg)](https://www.nuget.org/packages/PromptEngine/) |
+| `PromptEngine` | Complete package including the runtime library, Roslyn analyzer, and source generator | [![NuGet](https://img.shields.io/nuget/v/PromptEngine.svg)](https://www.nuget.org/packages/PromptEngine/) |
 
 ## Quick Start
 
@@ -26,16 +26,16 @@ A comprehensive prompt engineering framework for C# Agent/LLM development with c
 dotnet add package PromptEngine
 ```
 
-Add your prompt files to the project as additional files so the generator can find them. 
-1. You can use Visual Studio to set each prompt file build action as `C# analyzer additional file` in the property window or
-2. You can edit the project file:
+Add your prompt files to the project as AdditionalFiles so the generator can discover them.
+1. In Visual Studio, set each prompt file's Build Action to `C# analyzer additional file` in the Properties window; or
+2. Edit your project file:
 
 ```xml
 <ItemGroup>
    <AdditionalFiles Include="Prompts/**/*.prompt.md" />
 </ItemGroup>
 ```
-Then all files under `Prompts/` with `.prompt.md` extension will be included.
+Then all files under `Prompts/` with the `.prompt.md` extension will be included.
 
 ### 2. Create a Prompt Template (Markdown)
 
@@ -58,9 +58,9 @@ Create a file `Prompts/Summarize.prompt.md`:
 {{{Instructions}}}
 ````
 
-**Note:** PromptEngine uses **Mustache template syntax** 
-
-### 3. Define Context Class
+Note: PromptEngine uses Mustache template syntax. See the [Mustache documentation](https://mustache.github.io/) to learn more.
+ 
+### 3. Define the Context Class
 
 ```csharp
 using PromptEngine.Core.Attributes;
@@ -95,7 +95,7 @@ Console.WriteLine(prompt);
 
 ## Template Syntax
 
-PromptEngine uses **Mustache** template syntax, a logic-less templating system that is widely used across different programming languages.
+PromptEngine uses **Mustache** template syntax, a logic-less templating system widely used across languages.
 
 ### Basic Variables
 
@@ -144,13 +144,13 @@ Add comments that won't appear in the output:
 {{! This is a comment and will not be rendered }}
 ```
 
-### Case Insensitivity
+### Case Sensitivity
 
-Property lookups are case-insensitive by default, so `{{UserName}}`, `{{username}}`, and `{{USERNAME}}` all reference the same property.
+Property lookups are case-sensitive by default, so `{{UserName}}`, `{{username}}`, and `{{USERNAME}}` reference different properties.
 
 ### Escaping
 
-All variables are HTML-escaped by default. Use triple braces for unescaped output (use with caution):
+All variables are HTML-escaped by default. Use triple braces for unescaped output:
 
 ```markdown
 Escaped: {{Content}}
@@ -159,7 +159,7 @@ Unescaped: {{{RawHtmlContent}}}
 
 ## Compile-time Validation
 
-The analyzer provides compile-time template validation during build.
+The analyzer provides compile-time template validation during the build.
 
 If your template uses undefined placeholders, you'll get a compile error:
 
@@ -272,17 +272,17 @@ public class TranslateContext { /* ... */ }
 
 ### Custom Template Path Resolution
 
-Templates are searched by the analyzer among MSBuild AdditionalFiles; prefer providing relative paths under your project and include them via `<AdditionalFiles />`.
+The analyzer searches for templates in MSBuild AdditionalFiles. Prefer providing relative paths under your project and include them via `<AdditionalFiles />`.
 
 
 ## Troubleshooting
 
 - Analyzer does not find templates
- - Make sure your `.prompt.md` files are included via `<AdditionalFiles />` and paths in `PromptContext` match (relative paths are recommended). The generator discovers these files at compile time.
+ - Ensure your `.prompt.md` files are included via `<AdditionalFiles />`, and the paths in `PromptContext` match. Relative paths are recommended. The generator discovers these files at compile time.
 - Placeholders not replaced at runtime
- - Confirm the context properties are public and names match (case-sensitive by default). Use Mustache syntax with double curly braces `{{PropertyName}}`. The analyzer enforces this at compile-time via `PE003` / `PE004`.
+ - Confirm the context properties are public and names match (case-sensitive by default). Use Mustache syntax with double curly braces `{{PropertyName}}`. The analyzer enforces this at compile time via `PE003` / `PE004`.
 - Template syntax errors
- - Ensure you're using proper Mustache syntax: `{{Variable}}` for properties, `{{#Section}}...{{/Section}}` for conditionals/loops, `{{^Inverted}}...{{/Inverted}}` for inverted sections.
+ - Ensure you're using proper Mustache syntax: `{{Variable}}` for properties, `{{#Section}}...{{/Section}}` for conditionals/loops, and `{{^Inverted}}...{{/Inverted}}` for inverted sections.
 
 ## Requirements
 
@@ -290,11 +290,11 @@ Templates are searched by the analyzer among MSBuild AdditionalFiles; prefer pro
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit issues and pull requests.
+Contributions are welcome! Please submit issues and pull requests.
 
 ## License
 
-MIT License - see LICENSE file for details
+MIT License — see the LICENSE file for details.
 
 ## Links
 
