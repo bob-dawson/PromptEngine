@@ -32,7 +32,7 @@ Add your prompt files to the project as additional files so the generator can fi
 
 ```xml
 <ItemGroup>
- <AdditionalFiles Include="Prompts/**/*.prompt.md" />
+   <AdditionalFiles Include="Prompts/**/*.prompt.md" />
 </ItemGroup>
 ```
 Then all files under `Prompts/` with `.prompt.md` extension will be included.
@@ -41,7 +41,7 @@ Then all files under `Prompts/` with `.prompt.md` extension will be included.
 
 Create a file `Prompts/Summarize.prompt.md`:
 
-```markdown
+````markdown
 # Summarize Request for {{{UserName}}}
 
 ## Input
@@ -56,7 +56,7 @@ Create a file `Prompts/Summarize.prompt.md`:
 
 ## Additional Instructions
 {{{Instructions}}}
-```
+````
 
 **Note:** PromptEngine uses **Mustache template syntax** 
 
@@ -68,10 +68,10 @@ using PromptEngine.Core.Attributes;
 [PromptContext("Prompts/Summarize.prompt.md", TemplateName = "Summarize")]
 public class SummarizeContext
 {
- public string UserName { get; set; } = string.Empty;
- public string InputText { get; set; } = string.Empty;
- public string MaxWords { get; set; } = "100";
- public string Instructions { get; set; } = "Focus on key points";
+   public string UserName { get; set; } = string.Empty;
+   public string InputText { get; set; } = string.Empty;
+   public string MaxWords { get; set; } = "100";
+   public string Instructions { get; set; } = "Focus on key points";
 }
 ```
 
@@ -82,10 +82,10 @@ The source generator creates a `SummarizePromptBuilder` class:
 ```csharp
 var context = new SummarizeContext
 {
- UserName = "Alice",
- InputText = "AI is transforming industries...",
- MaxWords = "50",
- Instructions = "Keep it neutral"
+    UserName = "Alice",
+    InputText = "AI is transforming industries...",
+    MaxWords = "50",
+    Instructions = "Keep it neutral"
 };
 
 // Use the generated builder
@@ -192,12 +192,7 @@ if (!result.IsValid)
 }
 ```
 
-You can also load metadata from a specific assembly that contains generated metadata:
 
-```csharp
-var validator = new PromptRuntimeValidator();
-validator.LoadMetadataFromAssembly("./bin/Debug/net10.0/YourProject.dll");
-```
 
 ## Agent Framework Integration
 
@@ -279,26 +274,13 @@ public class TranslateContext { /* ... */ }
 
 Templates are searched by the analyzer among MSBuild AdditionalFiles; prefer providing relative paths under your project and include them via `<AdditionalFiles />`.
 
-### Metadata Access
-
-Generated metadata is exposed at runtime via the C# registry type `PromptEngine.Generated.PromptMetadataRegistry`. The CLI discovers it automatically. To access it yourself:
-
-```csharp
-using PromptEngine.Core.Runtime;
-
-var validator = new PromptRuntimeValidator();
-validator.LoadMetadataFromAssembly("./bin/Debug/net10.0/YourProject.dll");
-var metadata = validator.GetLoadedMetadata();
-```
 
 ## Troubleshooting
 
 - Analyzer does not find templates
  - Make sure your `.prompt.md` files are included via `<AdditionalFiles />` and paths in `PromptContext` match (relative paths are recommended). The generator discovers these files at compile time.
-- CLI shows "No metadata found"
- - Ensure you built the project first, and that the DLL you point to (or its output folder) contains the generated registry. Running `promptengine list ./bin/Debug/net10.0` after `dotnet build` should list templates.
 - Placeholders not replaced at runtime
- - Confirm the context properties are public and names match (case-insensitive by default). Use Mustache syntax with double curly braces `{{PropertyName}}`. The analyzer enforces this at compile-time via `PE003` / `PE004`.
+ - Confirm the context properties are public and names match (case-sensitive by default). Use Mustache syntax with double curly braces `{{PropertyName}}`. The analyzer enforces this at compile-time via `PE003` / `PE004`.
 - Template syntax errors
  - Ensure you're using proper Mustache syntax: `{{Variable}}` for properties, `{{#Section}}...{{/Section}}` for conditionals/loops, `{{^Inverted}}...{{/Inverted}}` for inverted sections.
 

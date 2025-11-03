@@ -37,12 +37,11 @@ jobs:
       - name: Test (Release)
         run: dotnet test --no-build -c Release --verbosity normal
 
-      # Here taking PromptEngine.Analyzer as an example, please modify according to your actual project
       - name: Pack NuGet Package
         run: |
           VERSION=${GITHUB_REF_NAME#v}
           echo "Detected version: $VERSION"
-          dotnet pack PromptEngine.Analyzer/PromptEngine.Analyzer.csproj \
+          dotnet pack PromptEngine/PromptEngine.csproj \
             -c Release -o ./artifacts \
             /p:PackageVersion=$VERSION
 
