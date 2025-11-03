@@ -9,6 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="..\PromptEngine.Analyzer\MustacheSymbolValidator.cs" Link="MustacheSymbolValidator.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.0" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5">
@@ -20,7 +24,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\PromptEngine\PromptEngine.csproj" />
-    <ProjectReference Include="..\PromptEngine.Analyzer\PromptEngine.Analyzer.csproj" />
   </ItemGroup>
 
 </Project>
