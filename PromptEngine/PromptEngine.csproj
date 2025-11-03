@@ -5,19 +5,39 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<LangVersion>latest</LangVersion>
-		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>PromptEngine</PackageId>
 		<AssemblyName>PromptEngine</AssemblyName>
 		<Version>0.5.0</Version>
 		<Authors>Bob Dawson</Authors>
 		<Description>A comprehensive prompt engineering framework for C# Agent/LLM development with compile-time validation, code generation and runtime safety checks. Includes runtime library and Roslyn analyzer/source generator.</Description>
 		<PackageTags>prompt;ai;agent;llm;source-generator;analyzer;roslyn;mustache</PackageTags>
+		<!-- Package readme -->
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<!-- Add analyzer to package -->
+		<TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_AddAnalyzerToPackage</TargetsForTfmSpecificContentInPackage>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Stubble.Core" Version="1.10.8" />
-		<PackageReference Include="System.Text.Json" Version="6.0.11" />
+		<PackageReference Include="System.Text.Json" Version="6.0.11" GeneratePathProperty="true" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.10" />
 	</ItemGroup>
+
+	<!-- Include README.md in the package root -->
+	<ItemGroup>
+		<None Include="..\README.md" Pack="true" PackagePath="\" />
+	</ItemGroup>
+
+	<Target Name="_AddAnalyzerToPackage">
+		<!-- Ensure analyzer is built -->
+		<MSBuild Projects="..\PromptEngine.Analyzer\PromptEngine.Analyzer.csproj" Targets="Build" Properties="Configuration=$(Configuration)" />
+		<ItemGroup>
+			<!-- Analyzer assembly -->
+			<TfmSpecificPackageFile Include="..\PromptEngine.Analyzer\bin\$(Configuration)\netstandard2.0\PromptEngine.Analyzer.dll" PackagePath="analyzers/dotnet/cs" />
+			<!-- Analyzer dependency: System.Text.Json needed at analyzer load time -->
+			<TfmSpecificPackageFile Include="$(PkgSystem_Text_Json)\lib\netstandard2.0\System.Text.Json.dll" PackagePath="analyzers/dotnet/cs" />
+		</ItemGroup>
+	</Target>
 
 </Project>

@@ -5,21 +5,15 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>disable</Nullable>
 		<LangVersion>latest</LangVersion>
-		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<PackageId>PromptEngine</PackageId>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+		<PackageId>PromptEngine.Analyzer</PackageId>
 		<Version>0.5.0</Version>
 		<Authors>Bob Dawson</Authors>
-		<Description>A comprehensive prompt engineering framework for C# Agent/LLM development with compile-time validation, code generation and runtime safety checks. Includes runtime library and Roslyn analyzer/source generator.</Description>
+		<Description>Roslyn analyzer/source generator for PromptEngine. Contains an in-source copy of Stubble.Core for analyzer-time mustache parsing to avoid NuGet load context issues.</Description>
 		<PackageTags>prompt;ai;agent;llm;source-generator;analyzer;roslyn;mustache</PackageTags>
 		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-		
-		<!-- Package readme -->
-		<PackageReadmeFile>README.md</PackageReadmeFile>
-		
-		<!-- This project crafts the package layout manually -->
-		<IncludeBuildOutput>false</IncludeBuildOutput>
-		<!-- NOTE: Do NOT mark as DevelopmentDependency because we ship lib assets for consumers -->
-		<!-- <DevelopmentDependency>true</DevelopmentDependency> -->
+		<!-- Keep build output only for analyzer consumption, no packing here -->
+		<IncludeBuildOutput>true</IncludeBuildOutput>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -27,8 +21,7 @@
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all" />
 		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
 		<PackageReference Include="System.Text.Json" Version="6.0.11" PrivateAssets="all" GeneratePathProperty="true" />
-		
-		<!-- Dependencies for the runtime library that will be included in the package -->
+		<!-- Analyzer project should not declare Stubble.Core dependency to avoid conflicts with in-source copy -->
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.10" />
 	</ItemGroup>
 
@@ -37,33 +30,6 @@
 		<EmbeddedResource Include="Templates\Register.mus" />
 	</ItemGroup>
 
-	<!-- Include README.md in the package root -->
-	<ItemGroup>
-		<None Include="..\README.md" Pack="true" PackagePath="\" />
-	</ItemGroup>
-
-	<PropertyGroup>
-		<TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_AddAnalyzerAndRuntimeToPackage</TargetsForTfmSpecificContentInPackage>
-		<GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
-	</PropertyGroup>
-
-	<Target Name="GetDependencyTargetPaths">
-		<MSBuild Projects="..\PromptEngine\PromptEngine.csproj" Targets="Build">
-			<Output TaskParameter="TargetOutputs" ItemName="RuntimeDependency" />
-		</MSBuild>
-	</Target>
-
-	<Target Name="_AddAnalyzerAndRuntimeToPackage" DependsOnTargets="GetDependencyTargetPaths">
-		<!-- Add the analyzer DLL to the analyzers folder -->
-		<ItemGroup>
-			<!-- Analyzer files -->
-			<TfmSpecificPackageFile Include="$(OutputPath)\$(AssemblyName).dll" PackagePath="analyzers/dotnet/cs" />
-			<TfmSpecificPackageFile Include="$(PkgSystem_Text_Json)\lib\netstandard2.0\System.Text.Json.dll" PackagePath="analyzers/dotnet/cs" />
-			
-			<!-- Runtime library files (lib assets for consumers) -->
-			<TfmSpecificPackageFile Include="..\PromptEngine\bin\$(Configuration)\netstandard2.0\PromptEngine.dll" PackagePath="lib/netstandard2.0" />
-			<TfmSpecificPackageFile Include="..\PromptEngine\bin\$(Configuration)\netstandard2.0\PromptEngine.pdb" PackagePath="lib/netstandard2.0" />
-		</ItemGroup>
-	</Target>
+	<!-- Remove custom packing targets: packaging is driven from PromptEngine project -->
 
 </Project>
