@@ -1,4 +1,4 @@
-# Summarize Request for {UserName}
+# Summarize Request for {{UserName}}
 
 ## Input
 
@@ -7,8 +7,8 @@
 ```
 
 ## Requirements
-- Provide a concise summary in {MaxWords} words or less.
+- Provide a concise summary in {{MaxWords}} words or less.
 - Focus on key ideas and main points.
 
 ## Additional Instructions
-{Instructions}
+{{Instructions}}

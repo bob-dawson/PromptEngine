@@ -10,32 +10,10 @@ public static class PromptTemplateParser
     private static readonly Regex PlaceholderRegex = new(@"\{(\w+)\}", RegexOptions.Compiled);
 
     /// <summary>
-    /// Extract placeholders from template content
-    /// </summary>
-    public static HashSet<string> ExtractPlaceholders(string templateContent)
-    {
-        if (string.IsNullOrWhiteSpace(templateContent))
-            return new HashSet<string>();
-
-        var matches = PlaceholderRegex.Matches(templateContent);
-        var placeholders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (Match match in matches)
-        {
-            if (match.Groups.Count > 1)
-            {
-                placeholders.Add(match.Groups[1].Value);
-            }
-        }
-
-        return placeholders;
-    }
-
-    /// <summary>
     /// Validate that placeholders in template match context properties
     /// </summary>
     public static (bool IsValid, List<string> MissingProperties, List<string> UnusedProperties)
-    ValidateTemplate(HashSet<string> placeholders, HashSet<string> contextProperties)
+        ValidateTemplate(HashSet<string> placeholders, HashSet<string> contextProperties)
     {
         var missingProperties = new List<string>();
         var unusedProperties = new List<string>();

@@ -1,12 +1,11 @@
 # PromptEngine - Prompt Engineering Framework for C#
 
-A comprehensive prompt engineering framework for C# Agent/LLM development with compile-time validation, runtime safety checks, and editor intelligence.
+A comprehensive prompt engineering framework for C# Agent/LLM development with compile-time validation, code generation and runtime safety checks.
 
 ## Features
 
 - Compile-time validation (Analyzer) - Catch template errors during build
 - Runtime validation - Verify template changes in production or CI
-- Editor hints - IDE support with variable autocomplete
 - Type-safe - Strong typing for context and templates
 - Agent Framework integration - Works with Microsoft Agent Framework and Semantic Kernel
 - Multi-template support - Manage multiple prompts in one project
@@ -16,7 +15,7 @@ A comprehensive prompt engineering framework for C# Agent/LLM development with c
 
 | Package | Description | NuGet |
 |---------|-------------|-------|
-| `PromptEngine` | Unified runtime library: common models, parsers, runtime validation, Agent integration, and editor hint generation | [![NuGet](https://img.shields.io/nuget/v/PromptEngine.svg)](https://www.nuget.org/packages/PromptEngine/) |
+| `PromptEngine` | Unified runtime library: common models, parsers, runtime validation, Agent integration | [![NuGet](https://img.shields.io/nuget/v/PromptEngine.svg)](https://www.nuget.org/packages/PromptEngine/) |
 | `PromptEngine.Analyzer` | Roslyn analyzer + source generator (compile-time) | [![NuGet](https://img.shields.io/nuget/v/PromptEngine.Analyzer.svg)](https://www.nuget.org/packages/PromptEngine.Analyzer/) |
 | `PromptEngine.Tools` | CLI validation tool | [![NuGet](https://img.shields.io/nuget/v/PromptEngine.Tools.svg)](https://www.nuget.org/packages/PromptEngine.Tools/) |
 
@@ -196,25 +195,6 @@ public class MyAgent
 }
 ```
 
-## Editor Support
-
-Generate editor hints for IDE autocomplete using metadata discovered at runtime:
-
-```csharp
-using PromptEngine.Core.Runtime;
-using PromptEngine.Editor.Generators;
-
-var validator = new PromptRuntimeValidator();
-validator.LoadMetadataFromDirectory("./bin/Debug/net10.0");
-var metadata = validator.GetLoadedMetadata().ToList();
-
-var generator = new EditorHintGenerator();
-int files = generator.SaveEditorHints(metadata, "./editor-hints");
-
-// Outputs:
-// - prompt-hints.json (for generic editors)
-// - prompt-types.d.ts (for TypeScript-enabled editors)
-```
 
 ## Project Structure
 

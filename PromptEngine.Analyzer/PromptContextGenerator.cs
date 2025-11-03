@@ -3,10 +3,6 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-using PromptEngine.Core.Models;
-using PromptEngine.Core.Parsers;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Stubble.Core;
 using Stubble.Core.Settings;
@@ -17,27 +13,27 @@ namespace PromptEngine.Analyzer;
 public class PromptContextGenerator : IIncrementalGenerator
 {
     private static readonly StubbleVisitorRenderer MustacheRenderer = new(new RendererSettingsBuilder()
-        .SetIgnoreCaseOnKeyLookup(false)
+    .SetIgnoreCaseOnKeyLookup(true)
         .BuildSettings());
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         // Discover classes with PromptContextAttribute
         var classDeclarations = context.SyntaxProvider
-        .CreateSyntaxProvider(
-        predicate: static (s, _) => IsSyntaxTargetForGeneration(s),
-        transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx))
-        .Where(static m => m is not null);
+            .CreateSyntaxProvider(
+                predicate: static (s, _) => IsSyntaxTargetForGeneration(s),
+                transform: static (ctx, _) => GetSemanticTargetForGeneration(ctx))
+            .Where(static m => m is not null);
 
         // Collect AdditionalFiles (prompt templates are provided via <AdditionalFiles />)
         var additionalFiles = context.AdditionalTextsProvider
-        .Select(static (text, ct) => new AdditionalFileInfo(text.Path, text.GetText(ct)))
-        .Collect();
+     .Select(static (text, ct) => new AdditionalFileInfo(text.Path, text.GetText(ct)))
+           .Collect();
 
         // Combine compilation, classes and additional files
         var input = context.CompilationProvider
-        .Combine(classDeclarations.Collect())
-        .Combine(additionalFiles);
+          .Combine(classDeclarations.Collect())
+          .Combine(additionalFiles);
 
         context.RegisterSourceOutput(input, static (spc, source) =>
         {
@@ -85,7 +81,7 @@ public class PromptContextGenerator : IIncrementalGenerator
     {
         if (classes.IsDefaultOrEmpty) return;
 
-        List<PromptBuilderRequest> requests = new();
+        List<PromptBuilderRequest> requests = [];
 
         foreach (var classDeclaration in classes.Distinct())
         {
@@ -93,7 +89,7 @@ public class PromptContextGenerator : IIncrementalGenerator
 
             var semanticModel = compilation.GetSemanticModel(classDeclaration.SyntaxTree);
             if (semanticModel.GetDeclaredSymbol(classDeclaration)
-                    is not INamedTypeSymbol classSymbol) continue;
+                is not INamedTypeSymbol classSymbol) continue;
 
             // Find all PromptContextAttribute usages on this class
             var attributes = classSymbol.GetAttributes()
@@ -108,6 +104,7 @@ public class PromptContextGenerator : IIncrementalGenerator
                 .OfType<IPropertySymbol>()
                 .Where(p => p.DeclaredAccessibility == Accessibility.Public)
                 .Select(p => p.Name);
+
             foreach (var name in propertySymbols)
             {
                 if (name is not null)
@@ -126,57 +123,70 @@ public class PromptContextGenerator : IIncrementalGenerator
                 if (string.IsNullOrWhiteSpace(templatePath))
                 {
                     ReportDiagnostic(context, "PE001", DiagnosticSeverity.Error,
-                    $"Template path cannot be null or empty for class '{classSymbol.Name}'",
-                    GetAttributeArgumentLocation(attribute, 0) ?? classDeclaration.GetLocation());
+                        $"Template path cannot be null or empty for class '{classSymbol.Name}'",
+                        GetAttributeArgumentLocation(attribute, 0) ?? classDeclaration.GetLocation());
                     continue;
                 }
 
                 // Template name, default to the class name
                 var templateName = attribute.NamedArguments
-                .FirstOrDefault(a => a.Key == "TemplateName").Value.Value?.ToString()
-                ?? classSymbol.Name;
+                   .FirstOrDefault(a => a.Key == "TemplateName").Value.Value?.ToString()
+                    ?? classSymbol.Name;
 
                 // Resolve template from AdditionalFiles
                 var templateContent = TryResolveTemplateFromAdditionalFiles(additionalFiles, templatePath!, out var resolvedPath, out var resolvedText);
                 if (templateContent is null)
                 {
                     ReportDiagnostic(context, "PE002", DiagnosticSeverity.Warning,
-                    $"Template file '{templatePath}' not found in AdditionalFiles for class '{classSymbol.Name}'. Add it to <AdditionalFiles Include=\"...\" /> in your project.",
-                    GetAttributeArgumentLocation(attribute, 0) ?? classDeclaration.GetLocation());
+                        $"Template file '{templatePath}' not found in AdditionalFiles for class '{classSymbol.Name}'. Add it to <AdditionalFiles Include=\"...\" /> in your project.",
+                        GetAttributeArgumentLocation(attribute, 0) ?? classDeclaration.GetLocation());
                     continue;
                 }
 
-                // Extract placeholders for this template
-                var placeholders = PromptTemplateParser.ExtractPlaceholders(templateContent);
+                // Extract placeholders using Mustache parser
+                var placeholders = MustacheSymbolValidator.ExtractPlaceholders(templateContent);
                 foreach (var ph in placeholders)
                 {
-                    unionPlaceholders.Add(ph);
+                    // Add root property name to union (before first dot)
+                    var rootProp = ph.Split('.')[0];
+                    unionPlaceholders.Add(rootProp);
                 }
 
-                // Validate placeholders vs properties
-                var (isValid, missing, _) = PromptTemplateParser.ValidateTemplate(placeholders, properties);
+                // Validate using symbol-based Mustache validator
+                var validationErrors = MustacheSymbolValidator.ValidateTemplate(templateContent, classSymbol);
 
-                foreach (var m in missing)
+                foreach (var error in validationErrors)
                 {
                     Location? loc = null;
                     if (resolvedText is not null && resolvedPath is not null)
                     {
-                        var needle = "{" + m + "}";
-                        var idx = templateContent.IndexOf(needle, System.StringComparison.Ordinal);
-                        if (idx >= 0)
+                        // Try to find the location of the error in the template
+                        var errorMatch = System.Text.RegularExpressions.Regex.Match(error, @"'([^']+)'");
+                        if (errorMatch.Success)
                         {
-                            var span = new TextSpan(idx, needle.Length);
-                            var lineSpan = resolvedText.Lines.GetLinePositionSpan(span);
-                            loc = Location.Create(resolvedPath, span, lineSpan);
+                            var pathValue = errorMatch.Groups[1].Value;
+                            // Try both Mustache syntax {{path}} and plain {path}
+                            var needles = new[] { "{{" + pathValue + "}}", "{" + pathValue + "}" };
+                            foreach (var needle in needles)
+                            {
+                                var idx = templateContent.IndexOf(needle, System.StringComparison.Ordinal);
+                                if (idx >= 0)
+                                {
+                                    var span = new TextSpan(idx, needle.Length);
+                                    var lineSpan = resolvedText.Lines.GetLinePositionSpan(span);
+                                    loc = Location.Create(resolvedPath, span, lineSpan);
+                                    break;
+                                }
+                            }
                         }
                     }
 
                     ReportDiagnostic(context, "PE003", DiagnosticSeverity.Error,
-                    $"Template uses undefined placeholder '{{{m}}}' not found in context class '{classSymbol.Name}'",
-                    loc ?? classDeclaration.GetLocation());
+                       error,
+                 loc ?? classDeclaration.GetLocation());
                 }
 
-                if (!isValid) continue;
+                if (validationErrors.Count > 0) continue;
 
                 var request = new PromptBuilderRequest
                 {
@@ -199,16 +209,16 @@ public class PromptContextGenerator : IIncrementalGenerator
             {
                 Location? loc = null;
                 var propSymbol = classSymbol.GetMembers()
-                    .OfType<IPropertySymbol>()
-                    .FirstOrDefault(p => p.Name == u);
+               .OfType<IPropertySymbol>()
+               .FirstOrDefault(p => p.Name == u);
                 var propLoc = propSymbol?.Locations.FirstOrDefault();
                 if (propLoc is not null)
                 {
                     loc = propLoc;
                 }
                 ReportDiagnostic(context, "PE004", DiagnosticSeverity.Warning,
-                $"Context property '{u}' in class '{classSymbol.Name}' is not used in any template",
-                loc ?? classDeclaration.GetLocation());
+                      $"Context property '{u}' in class '{classSymbol.Name}' is not used in any template",
+                         loc ?? classDeclaration.GetLocation());
             }
         }
 
@@ -306,12 +316,8 @@ public class PromptContextGenerator : IIncrementalGenerator
 
         // Escape template for C# string
         var escapedTemplate = EscapeForCSharp(request.TemplateContent);
-        var interpolated = ReplaceWithInterpolations(escapedTemplate, request.Placeholders);
 
         var templateText = LoadEmbeddedTemplate("PromptBuilder.mus");
-
-        // Pre-escape helper for model strings
-        string Esc(string v) => EscapeForCSharp(v ?? string.Empty);
 
         var model = new
         {
@@ -324,36 +330,25 @@ public class PromptContextGenerator : IIncrementalGenerator
             placeholders = request.Placeholders.Select(Esc).ToList(),
             context_properties = request.ContextProperties.Select(Esc).ToList(),
             template_content = Esc(request.TemplateContent),
-            escaped_template = escapedTemplate,
-            interpolated_template = interpolated
+            escaped_template = escapedTemplate
         };
         return MustacheRenderer.Render(templateText, model);
     }
+
+    private static string Esc(string v) => EscapeForCSharp(v ?? string.Empty);
 
     private static string LoadEmbeddedTemplate(string fileName)
     {
         var asm = typeof(PromptContextGenerator).GetTypeInfo().Assembly;
         var resourceName = asm.GetManifestResourceNames()
-        .FirstOrDefault(n => n.EndsWith($"Templates.{fileName}", System.StringComparison.OrdinalIgnoreCase));
+            .FirstOrDefault(n => n.EndsWith($"Templates.{fileName}", System.StringComparison.OrdinalIgnoreCase));
         if (resourceName is null)
         {
             throw new System.InvalidOperationException($"Embedded template '{fileName}' not found in resources.");
         }
-        using (var stream = asm.GetManifestResourceStream(resourceName)!)
-        using (var reader = new System.IO.StreamReader(stream))
-        {
-            return reader.ReadToEnd();
-        }
-    }
-
-    private static string ReplaceWithInterpolations(string escapedTemplate, HashSet<string> placeholders)
-    {
-        var result = escapedTemplate;
-        foreach (var ph in placeholders)
-        {
-            result = result.Replace("{" + ph + "}", "{" + $"context.{ph}" + "}");
-        }
-        return result;
+        using var stream = asm.GetManifestResourceStream(resourceName)!;
+        using StreamReader reader = new(stream);
+        return reader.ReadToEnd();
     }
 
     private static string EscapeForCSharp(string s)

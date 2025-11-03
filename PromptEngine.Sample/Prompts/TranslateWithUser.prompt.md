@@ -1,11 +1,11 @@
-# Translate Request for {UserName}
+# Translate Request for {{UserName}}
 
 ## Input
 
 ```text
-{Text}
+{{Text}}
 ```
 
 ## Requirements
-- Translate from {SourceLanguage} to {TargetLanguage}.
-- Use the {Style} tone.
+- Translate from {{SourceLanguage}} to {{TargetLanguage}}.
+- Use the {{Style}} tone.

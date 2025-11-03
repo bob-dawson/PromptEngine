@@ -3,16 +3,16 @@ using Xunit;
 
 namespace PromptEngine.Tests.Parsers;
 
-public class PromptTemplateParserTests
+public class MustacheTemplateParserTests
 {
     [Fact]
-    public void ExtractPlaceholders_ValidTemplate_ReturnsAllPlaceholders()
+    public void ExtractPlaceholders_ValidMustacheTemplate_ReturnsAllPlaceholders()
     {
         // Arrange
-        var template = "Hello {Name}, your age is {Age} and email is {Email}";
+        var template = "Hello {{Name}}, your age is {{Age}} and email is {{Email}}";
 
         // Act
-        var placeholders = PromptTemplateParser.ExtractPlaceholders(template);
+        var placeholders = MustacheTemplateParser.ExtractPlaceholders(template);
 
         // Assert
         Assert.Equal(3, placeholders.Count);
@@ -22,13 +22,55 @@ public class PromptTemplateParserTests
     }
 
     [Fact]
+    public void ExtractPlaceholders_SectionSyntax_ExtractsPlaceholder()
+    {
+        // Arrange
+        var template = "{{#Items}}Item: {{Name}}{{/Items}}";
+
+        // Act
+        var placeholders = MustacheTemplateParser.ExtractPlaceholders(template);
+
+        // Assert - 只提取顶层属性 Items
+        Assert.Single(placeholders);
+        Assert.Contains("Items", placeholders);
+    }
+
+    [Fact]
+    public void ExtractPlaceholders_InvertedSection_ExtractsPlaceholder()
+    {
+        // Arrange
+        var template = "{{^HasItems}}No items{{/HasItems}}";
+
+        // Act
+        var placeholders = MustacheTemplateParser.ExtractPlaceholders(template);
+
+        // Assert
+        Assert.Single(placeholders);
+        Assert.Contains("HasItems", placeholders);
+    }
+
+    [Fact]
+    public void ExtractPlaceholders_NestedPaths_ExtractsPlaceholders()
+    {
+        // Arrange
+        var template = "Hello {{User.Name}}, your email is {{User.Email}}";
+
+        // Act
+        var placeholders = MustacheTemplateParser.ExtractPlaceholders(template);
+
+        // Assert - 只提取根属性 "User"
+        Assert.Single(placeholders);
+        Assert.Contains("User", placeholders);
+    }
+
+    [Fact]
     public void ExtractPlaceholders_EmptyTemplate_ReturnsEmpty()
     {
         // Arrange
         var template = "";
 
         // Act
-        var placeholders = PromptTemplateParser.ExtractPlaceholders(template);
+        var placeholders = MustacheTemplateParser.ExtractPlaceholders(template);
 
         // Assert
         Assert.Empty(placeholders);
@@ -41,7 +83,7 @@ public class PromptTemplateParserTests
         var template = "Hello World, no placeholders here";
 
         // Act
-        var placeholders = PromptTemplateParser.ExtractPlaceholders(template);
+        var placeholders = MustacheTemplateParser.ExtractPlaceholders(template);
 
         // Assert
         Assert.Empty(placeholders);
@@ -51,10 +93,10 @@ public class PromptTemplateParserTests
     public void ExtractPlaceholders_DuplicatePlaceholders_ReturnsUnique()
     {
         // Arrange
-        var template = "Hello {Name}, {Name} is great!";
+        var template = "Hello {{Name}}, {{Name}} is great!";
 
         // Act
-        var placeholders = PromptTemplateParser.ExtractPlaceholders(template);
+        var placeholders = MustacheTemplateParser.ExtractPlaceholders(template);
 
         // Assert
         Assert.Single(placeholders);
@@ -69,7 +111,23 @@ public class PromptTemplateParserTests
         var properties = new HashSet<string> { "Name", "Age" };
 
         // Act
-        var (isValid, missing, unused) = PromptTemplateParser.ValidateTemplate(placeholders, properties);
+        var (isValid, missing, unused) = MustacheTemplateParser.ValidateTemplate(placeholders, properties);
+
+        // Assert
+        Assert.True(isValid);
+        Assert.Empty(missing);
+        Assert.Empty(unused);
+    }
+
+    [Fact]
+    public void ValidateTemplate_NestedPath_ValidatesRootProperty()
+    {
+        // Arrange
+        var placeholders = new HashSet<string> { "User" }; // 只包含根属性
+        var properties = new HashSet<string> { "User" };
+
+        // Act
+        var (isValid, missing, unused) = MustacheTemplateParser.ValidateTemplate(placeholders, properties);
 
         // Assert
         Assert.True(isValid);
@@ -85,7 +143,7 @@ public class PromptTemplateParserTests
         var properties = new HashSet<string> { "Name", "Age" };
 
         // Act
-        var (isValid, missing, unused) = PromptTemplateParser.ValidateTemplate(placeholders, properties);
+        var (isValid, missing, unused) = MustacheTemplateParser.ValidateTemplate(placeholders, properties);
 
         // Assert
         Assert.False(isValid);
@@ -102,7 +160,7 @@ public class PromptTemplateParserTests
         var properties = new HashSet<string> { "Name", "Age", "Email" };
 
         // Act
-        var (isValid, missing, unused) = PromptTemplateParser.ValidateTemplate(placeholders, properties);
+        var (isValid, missing, unused) = MustacheTemplateParser.ValidateTemplate(placeholders, properties);
 
         // Assert
         Assert.True(isValid);
@@ -110,57 +168,5 @@ public class PromptTemplateParserTests
         Assert.Equal(2, unused.Count);
         Assert.Contains("Age", unused);
         Assert.Contains("Email", unused);
-    }
-
-    [Fact]
-    public void ReplacePlaceholders_ValidInput_ReplacesCorrectly()
-    {
-        // Arrange
-        var template = "Hello {Name}, you are {Age} years old";
-        var values = new Dictionary<string, string?>
-        {
-            { "Name", "Alice" },
-        { "Age", "30" }
-    };
-
-        // Act
-        var result = PromptTemplateParser.ReplacePlaceholders(template, values);
-
-        // Assert
-        Assert.Equal("Hello Alice, you are 30 years old", result);
-    }
-
-    [Fact]
-    public void ReplacePlaceholders_MissingValue_KeepsPlaceholder()
-    {
-        // Arrange
-        var template = "Hello {Name}, you are {Age} years old";
-        var values = new Dictionary<string, string?>
-        {
-            { "Name", "Alice" }
-        };
-
-        // Act
-        var result = PromptTemplateParser.ReplacePlaceholders(template, values);
-
-        // Assert
-        Assert.Equal("Hello Alice, you are {Age} years old", result);
-    }
-
-    [Fact]
-    public void ReplacePlaceholders_NullValue_ReplacesWithEmpty()
-    {
-        // Arrange
-        var template = "Hello {Name}";
-        var values = new Dictionary<string, string?>
-        {
-           { "Name", null }
-        };
-
-        // Act
-        var result = PromptTemplateParser.ReplacePlaceholders(template, values);
-
-        // Assert
-        Assert.Equal("Hello ", result);
     }
 }

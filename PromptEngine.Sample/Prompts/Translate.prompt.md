@@ -1,13 +1,13 @@
 # Translate Text
 
-- From: {SourceLanguage}
-- To: {TargetLanguage}
+- From: {{SourceLanguage}}
+- To: {{TargetLanguage}}
 
 ## Text
 
 ```text
-{Text}
+{{Text}}
 ```
 
 ## Style
-{Style}
+{{Style}}

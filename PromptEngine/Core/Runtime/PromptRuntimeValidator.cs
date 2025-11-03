@@ -36,10 +36,10 @@ public static class PromptRuntimeValidator
         }
 
         var templateContent = File.ReadAllText(metadata.TemplatePath);
-        var actualPlaceholders = PromptTemplateParser.ExtractPlaceholders(templateContent);
+        var actualPlaceholders = MustacheTemplateParser.ExtractPlaceholders(templateContent);
 
         var contextProperties = new HashSet<string>(metadata.ContextProperties);
-        var (isValid, missing, unused) = PromptTemplateParser.ValidateTemplate(actualPlaceholders, contextProperties);
+        var (isValid, missing, unused) = MustacheTemplateParser.ValidateTemplate(actualPlaceholders, contextProperties);
 
         if (!isValid)
         {

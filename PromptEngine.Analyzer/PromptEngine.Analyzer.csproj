@@ -16,7 +16,6 @@
 
 	<ItemGroup>
 		<Compile Include="..\PromptEngine\Core\Models\PromptMetadata.cs" Link="PromptMetadata.cs" />
-		<Compile Include="..\PromptEngine\Core\Parsers\PromptTemplateParser.cs" Link="PromptTemplateParser.cs" />
 	</ItemGroup>
 
 	<ItemGroup>

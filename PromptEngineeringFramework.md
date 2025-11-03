@@ -62,13 +62,7 @@ public static partial class SummarizePromptBuilder
 - 校验模板占位符与上下文属性一致性。
 - 可在应用启动或 CI/CD 阶段执行。
 
-###2.5 编辑器提示支持
-
-- 根据上下文类生成可用变量列表：
- - JSON 元数据文件：编辑器读取显示可用占位符。
- - 可选输出 TypeScript 类型文件 `.d.ts` 用于 Web 编辑器自动提示。
-
-###2.6 Agent Framework 集成
+###2.5 Agent Framework 集成
 
 - 与 Microsoft Agent Framework / Semantic Kernel兼容。
 - 提供简单接口注册 Prompt 构建器与上下文。
