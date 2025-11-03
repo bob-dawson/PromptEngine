@@ -39,12 +39,6 @@ public static partial class {{{ builder_class_name }}}
                 TemplateName = "{{{ template_name }}}",
                 TemplatePath = "{{{ template_path }}}",
                 ContextTypeName = "{{{ context_full_type_name }}}",
-                ContextProperties = new List<string>
-                {
-{{#context_properties}}
-                    "{{{ . }}}",
-{{/context_properties}}
-                },
                 TemplateContent = "{{{ template_content }}}"
             };
 
@@ -69,7 +63,9 @@ public static partial class {{{ builder_class_name }}}
             throw new System.ArgumentNullException(nameof(context));
 
         EnsureRegistered();
-        return Render("{{{ escaped_template }}}", context);
+        if (PromptMetadataRegistry.TryGet("{{{ context_full_type_name }}}", "{{{ template_name }}}", out var meta))
+            return Render(meta.TemplateContent, context);
+        throw new System.InvalidOperationException("Prompt metadata not found for the specified context and template name.");
     }
 
     /// <summary>
@@ -130,14 +126,6 @@ public static partial class {{{ builder_class_name }}}
         EnsureRegistered();
         var text = reader.ReadToEnd();
         return Render(text, context);
-    }
-
-    /// <summary>
-    /// Get template content
-    /// </summary>
-    public static string GetTemplate()
-    {
-        return "{{{ escaped_template }}}";
     }
 }
 

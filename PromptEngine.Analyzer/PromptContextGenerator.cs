@@ -195,7 +195,7 @@ public class PromptContextGenerator : IIncrementalGenerator
                     TemplateContent = templateContent,
                     Placeholders = placeholders,
                     ContextProperties = properties,
-                    TemplatePath = templatePath
+                    TemplatePath = templatePath.Replace('\\', '/')
                 };
                 requests.Add(request);
                 var builderSource = GeneratePromptBuilderWithMustache(request);
@@ -314,9 +314,6 @@ public class PromptContextGenerator : IIncrementalGenerator
         var fullTypeName = request.ContextClass.ToDisplayString();
         var builderClassName = $"{request.TemplateName}PromptBuilder";
 
-        // Escape template for C# string
-        var escapedTemplate = EscapeForCSharp(request.TemplateContent);
-
         var templateText = LoadEmbeddedTemplate("PromptBuilder.mus");
 
         var model = new
@@ -326,11 +323,8 @@ public class PromptContextGenerator : IIncrementalGenerator
             template_name = request.TemplateName,
             context_class_name = className,
             context_full_type_name = fullTypeName,
-            template_path = Esc(request.TemplatePath),
-            placeholders = request.Placeholders.Select(Esc).ToList(),
-            context_properties = request.ContextProperties.Select(Esc).ToList(),
+            template_path = request.TemplatePath,
             template_content = Esc(request.TemplateContent),
-            escaped_template = escapedTemplate
         };
         return MustacheRenderer.Render(templateText, model);
     }

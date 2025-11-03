@@ -18,13 +18,7 @@ public class PromptMetadata
     /// <summary>
     /// Fully qualified context type name
     /// </summary>
-    public string ContextTypeName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// List of context property names
-    /// </summary>
-    public List<string> ContextProperties { get; set; } = [];
-
+    public string ContextTypeName { get; set; } = string.Empty;  
     /// <summary>
     /// Template content (optional)
     /// </summary>

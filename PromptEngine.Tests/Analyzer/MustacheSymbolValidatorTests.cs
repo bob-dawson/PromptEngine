@@ -337,7 +337,7 @@ namespace Test
 {
     public class Tag
     {
-    public string Name { get; set; }
+        public string Name { get; set; }
         public string Color { get; set; }
     }
 
@@ -345,14 +345,14 @@ namespace Test
     {
         public string Title { get; set; }
         public string Content { get; set; }
-      public List<Tag> Tags { get; set; }
+        public List<Tag> Tags { get; set; }
     }
 
     public class TestContext
     {
-    public string Author { get; set; }
-    public List<Post> Posts { get; set; }
- }
+        public string Author { get; set; }
+        public List<Post> Posts { get; set; }
+    }
 }";
         var template = @"
 Author: {{Author}}
@@ -364,9 +364,9 @@ Tags: {{#Tags}}{{Name}} ({{Color}}){{/Tags}}
         var symbol = GetTypeSymbol(code, "TestContext");
 
         // Act
-     var errors = MustacheSymbolValidator.ValidateTemplate(template, symbol);
+        var errors = MustacheSymbolValidator.ValidateTemplate(template, symbol);
 
-   // Assert - 验证仍然检查所有嵌套路径的有效性
+        // Assert - 验证仍然检查所有嵌套路径的有效性
         Assert.Empty(errors);
     }
 
@@ -385,7 +385,7 @@ Tags: {{#Tags}}{{Name}} ({{Color}}){{/Tags}}
         // Act
         var placeholders = MustacheSymbolValidator.ExtractPlaceholders(template);
 
-     // Assert - 只提取顶层根属性：Author 和 Posts（不递归到 Section 内部）
+        // Assert - 只提取顶层根属性：Author 和 Posts（不递归到 Section 内部）
         Assert.Equal(2, placeholders.Count);
         Assert.Contains("Author", placeholders);
         Assert.Contains("Posts", placeholders);

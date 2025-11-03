@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PromptEngine.Agent.Extensions;
 using PromptEngine.Core.Runtime;
@@ -35,7 +34,7 @@ class Program
 
         //runtime load prompts from directory
         //you can access PromptMetadataRegistry.All and load prompt from other source like database
-        PromptMetadataRegistry.LoadPromptFromDir("Prompts");
+        PromptMetadataRegistry.LoadPromptFromDir(Directory.GetCurrentDirectory());
 
         //runtime validate all registered prompts
         var result = PromptRuntimeValidator.ValidateAll();
@@ -63,6 +62,7 @@ class Program
             MaxWords = "50",
             Instructions = "Focus on the key concepts and applications"
         };
+        
         // Use the generated Prompt Builder
         var summarizePrompt = summarizeContext.BuildSummarizePrompt();
         Console.WriteLine(summarizePrompt);
@@ -90,13 +90,6 @@ class Program
         Console.WriteLine("--------------------------------");
         var translateWithUserPrompt = TranslateWithUserPromptBuilder.Build(translateContext);
         Console.WriteLine(translateWithUserPrompt);
-        Console.WriteLine("\n");
-
-        // Example4: Get template content
-        Console.WriteLine("4. Template Content Example");
-        Console.WriteLine("--------------------------------");
-        Console.WriteLine("Summarize Template:");
-        Console.WriteLine(SummarizePromptBuilder.GetTemplate());
         Console.WriteLine("\n");
 
         return true;
