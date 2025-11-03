@@ -1,47 +1,58 @@
-name: Build and Test
+name: Build, Test, Pack and Publish
 
 on:
   push:
     branches: [ master, main, develop ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ master, main, develop ]
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup .NET
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Setup .NET SDKs (8 and10)
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: '10.0.x'
-    
-    - name: Restore dependencies
-  run: dotnet restore
-    
-    - name: Build
+        dotnet-version: |
+          8.0.x
+          10.0.x
+        include-prerelease: true
+
+    - name: Restore
+      run: dotnet restore
+
+    - name: Build (Release)
       run: dotnet build --no-restore --configuration Release
-    
-    - name: Test
- run: dotnet test --no-build --configuration Release --verbosity normal
-    
-    - name: Install PromptEngine Tools
-      run: dotnet pack PromptEngine.Tools/PromptEngine.Tools.csproj -c Release
-    
-    - name: Validate Prompts in Sample
-      run: |
-        dotnet tool install --global --add-source ./PromptEngine.Tools/bin/Release PromptEngine.Tools
-     cd PromptEngine.Sample
-        dotnet build -c Release
-        promptengine validate ./bin/Release/net10.0
-    
-    - name: Pack NuGet packages
-      run: dotnet pack --no-build --configuration Release --output ./artifacts
-    
+
+    - name: Test (Release)
+      run: dotnet test --no-build --configuration Release --verbosity normal
+
+    - name: Build Sample (ensures analyzer & generator run)
+      working-directory: ./PromptEngine.Sample
+      run: dotnet build -c Release
+
+    # Pack the unified PromptEngine package (contained in PromptEngine.Analyzer project)
+    - name: Pack PromptEngine (Analyzer + Runtime)
+      run: dotnet pack PromptEngine.Analyzer/PromptEngine.Analyzer.csproj -c Release -o ./artifacts
+
     - name: Upload artifacts
-  uses: actions/upload-artifact@v3
- with:
+      uses: actions/upload-artifact@v3
+      with:
         name: nuget-packages
         path: ./artifacts/*.nupkg
+
+    - name: Publish to NuGet (on tag)
+      if: startsWith(github.ref, 'refs/tags/v')
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      run: |
+        dotnet nuget push "./artifacts/*.nupkg" \
+          --api-key "$NUGET_API_KEY" \
+          --source https://api.nuget.org/v3/index.json \
+          --skip-duplicate

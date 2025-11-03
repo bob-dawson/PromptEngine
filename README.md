@@ -10,14 +10,12 @@ A comprehensive prompt engineering framework for C# Agent/LLM development with c
 - **Mustache templating** - Industry-standard template syntax with logic support
 - Agent Framework integration - Works with Microsoft Agent Framework and Semantic Kernel
 - Multi-template support - Manage multiple prompts in one project
-- CLI tools - Validate and manage templates from command line
 
 ## Packages
 
 | Package | Description | NuGet |
 |---------|-------------|-------|
 | `PromptEngine` | Complete package including runtime library, Roslyn analyzer and source generator | [![NuGet](https://img.shields.io/nuget/v/PromptEngine.svg)](https://www.nuget.org/packages/PromptEngine/) |
-| `PromptEngine.Tools` | CLI validation tool | [![NuGet](https://img.shields.io/nuget/v/PromptEngine.Tools.svg)](https://www.nuget.org/packages/PromptEngine.Tools/) |
 
 ## Quick Start
 
@@ -199,21 +197,6 @@ You can also load metadata from a specific assembly that contains generated meta
 ```csharp
 var validator = new PromptRuntimeValidator();
 validator.LoadMetadataFromAssembly("./bin/Debug/net10.0/YourProject.dll");
-```
-
-## CLI Tool
-
-Install the global tool:
-
-```bash
-dotnet tool install -g PromptEngine.Tools
-```
-
-Validate prompts:
-
-```bash
-promptengine validate ./bin/Debug/net10.0
-promptengine list ./bin/Debug/net10.0
 ```
 
 ## Agent Framework Integration
