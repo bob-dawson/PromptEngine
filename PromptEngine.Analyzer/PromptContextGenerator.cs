@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.Text;
 using System.Reflection;
 using Stubble.Core;
 using Stubble.Core.Settings;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace PromptEngine.Analyzer;
 
@@ -346,10 +347,5 @@ public class PromptContextGenerator : IIncrementalGenerator
     }
 
     private static string EscapeForCSharp(string s)
-        => (s ?? string.Empty)
-        .Replace("\\", "\\\\")
-        .Replace("\"", "\\\"")
-        .Replace("\r\n", "\n")
-        .Replace("\r", "")
-        .Replace("\n", "\\n");
+        => SyntaxFactory.Literal(s).ToFullString();
 }

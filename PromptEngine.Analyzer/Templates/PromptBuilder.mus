@@ -39,7 +39,7 @@ public static partial class {{{ builder_class_name }}}
                 TemplateName = "{{{ template_name }}}",
                 TemplatePath = "{{{ template_path }}}",
                 ContextTypeName = "{{{ context_full_type_name }}}",
-                TemplateContent = "{{{ template_content }}}"
+                TemplateContent = {{{ template_content }}}
             };
 
             PromptMetadataRegistry.Register(meta);
