@@ -68,10 +68,10 @@ using PromptEngine.Core.Attributes;
 [PromptContext("Prompts/Summarize.prompt.md", TemplateName = "Summarize")]
 public class SummarizeContext
 {
-   public string UserName { get; set; } = string.Empty;
-   public string InputText { get; set; } = string.Empty;
-   public string MaxWords { get; set; } = "100";
-   public string Instructions { get; set; } = "Focus on key points";
+    public string UserName { get; set; } = string.Empty;
+    public string InputText { get; set; } = string.Empty;
+    public string MaxWords { get; set; } = "100";
+    public string Instructions { get; set; } = "Focus on key points";
 }
 ```
 
@@ -187,8 +187,8 @@ var result = validator.ValidateAll();
 
 if (!result.IsValid)
 {
- Console.WriteLine(result.ToString());
- throw new InvalidOperationException("Template validation failed");
+    Console.WriteLine(result.ToString());
+    throw new InvalidOperationException("Template validation failed");
 }
 ```
 
@@ -202,10 +202,10 @@ Register with dependency injection:
 using PromptEngine.Agent.Extensions;
 
 var builder = Host.CreateDefaultBuilder(args)
- .ConfigureServices((context, services) =>
- {
- services.AddPromptEngine();
- });
+    .ConfigureServices((context, services) =>
+    {
+        services.AddPromptEngine();
+    });
 ```
 
 Use in your agents:
@@ -213,26 +213,26 @@ Use in your agents:
 ```csharp
 public class MyAgent
 {
- private readonly IPromptManager _promptManager;
+    private readonly IPromptManager _promptManager;
 
- public MyAgent(IPromptManager promptManager)
- {
- _promptManager = promptManager;
- }
+    public MyAgent(IPromptManager promptManager)
+    {
+        _promptManager = promptManager;
+    }
 
- public async Task SummarizeAsync(string text)
- {
- var context = new SummarizeContext
- {
- UserName = "User",
- InputText = text,
- MaxWords = "100",
- Instructions = "Keep tone helpful"
- };
+    public async Task SummarizeAsync(string text)
+    {
+        var context = new SummarizeContext
+        {
+            UserName = "User",
+            InputText = text,
+            MaxWords = "100",
+            Instructions = "Keep tone helpful"
+        };
 
- string prompt = SummarizePromptBuilder.Build(context);
- // Use prompt with your LLM...
- }
+        string prompt = SummarizePromptBuilder.Build(context);
+        // Use prompt with your LLM...
+    }
 }
 ```
 
@@ -254,7 +254,7 @@ Add this to your project file to include prompt templates for the generator:
 
 ```xml
 <ItemGroup>
- <AdditionalFiles Include="Prompts/**/*.prompt.md" />
+   <AdditionalFiles Include="Prompts/**/*.prompt.md" />
 </ItemGroup>
 ```
 
