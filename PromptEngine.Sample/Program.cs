@@ -21,13 +21,13 @@ class Program
             .Build();
 
         // Run samples
-        if (!await RunSamples(host.Services))
+        if (!RunSamples(host.Services))
             return;
 
         await host.RunAsync();
     }
 
-    static async Task<bool> RunSamples(IServiceProvider services)
+    static bool RunSamples(IServiceProvider services)
     {
         //call generated register method to register all prompts
         PromptEngineRegister.Register();

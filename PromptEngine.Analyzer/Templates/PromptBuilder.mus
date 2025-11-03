@@ -60,7 +60,8 @@ public static partial class {{{ builder_class_name }}}
             throw new System.ArgumentNullException(nameof(context));
 
         EnsureRegistered();
-        if (PromptMetadataRegistry.TryGet("{{{ context_full_type_name }}}", "{{{ template_name }}}", out var meta))
+        PromptMetadataRegistry.TryGet("{{{ context_full_type_name }}}", "{{{ template_name }}}", out var meta);
+        if (meta != null)
             return Render(meta.TemplateContent, context);
         throw new System.InvalidOperationException("Prompt metadata not found for the specified context and template name.");
     }
