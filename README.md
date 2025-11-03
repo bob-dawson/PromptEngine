@@ -16,20 +16,16 @@ A comprehensive prompt engineering framework for C# Agent/LLM development with c
 
 | Package | Description | NuGet |
 |---------|-------------|-------|
-| `PromptEngine` | Unified runtime library: common models, parsers, runtime validation, Agent integration | [![NuGet](https://img.shields.io/nuget/v/PromptEngine.svg)](https://www.nuget.org/packages/PromptEngine/) |
-| `PromptEngine.Analyzer` | Roslyn analyzer + source generator (compile-time) | [![NuGet](https://img.shields.io/nuget/v/PromptEngine.Analyzer.svg)](https://www.nuget.org/packages/PromptEngine.Analyzer/) |
+| `PromptEngine` | Complete package including runtime library, Roslyn analyzer and source generator | [![NuGet](https://img.shields.io/nuget/v/PromptEngine.svg)](https://www.nuget.org/packages/PromptEngine/) |
 | `PromptEngine.Tools` | CLI validation tool | [![NuGet](https://img.shields.io/nuget/v/PromptEngine.Tools.svg)](https://www.nuget.org/packages/PromptEngine.Tools/) |
 
 ## Quick Start
 
-###1. Install Packages
+### 1. Install Package
 
 ```bash
-# Unified runtime (models, parsers, runtime validation, agent integration, editor support)
+# Single package includes everything: runtime library, analyzer, and source generator
 dotnet add package PromptEngine
-
-# Analyzer + source generator (compile-time validation and builder generation)
-dotnet add package PromptEngine.Analyzer
 ```
 
 Add your prompt files to the project as additional files so the generator can find them. 
@@ -43,7 +39,7 @@ Add your prompt files to the project as additional files so the generator can fi
 ```
 Then all files under `Prompts/` with `.prompt.md` extension will be included.
 
-###2. Create a Prompt Template (Markdown)
+### 2. Create a Prompt Template (Markdown)
 
 Create a file `Prompts/Summarize.prompt.md`:
 
@@ -66,7 +62,7 @@ Create a file `Prompts/Summarize.prompt.md`:
 
 **Note:** PromptEngine uses **Mustache template syntax** 
 
-###3. Define Context Class
+### 3. Define Context Class
 
 ```csharp
 using PromptEngine.Core.Attributes;
@@ -81,9 +77,9 @@ public class SummarizeContext
 }
 ```
 
-###4. Build and Use
+### 4. Build and Use
 
-The source generator (in `PromptEngine.Analyzer`) creates a `SummarizePromptBuilder` class:
+The source generator creates a `SummarizePromptBuilder` class:
 
 ```csharp
 var context = new SummarizeContext
@@ -165,7 +161,7 @@ Unescaped: {{{RawHtmlContent}}}
 
 ## Compile-time Validation
 
-With the analyzer/source-generator provided by `PromptEngine.Analyzer`, template issues are reported at build time.
+The analyzer provides compile-time template validation during build.
 
 If your template uses undefined placeholders, you'll get a compile error:
 
@@ -181,7 +177,7 @@ info PE004: Context property 'UnusedProperty' in class 'SummarizeContext' is not
 
 ## Runtime Validation
 
-Validate templates at runtime or in CI/CD using the unified `PromptEngine` package:
+Validate templates at runtime or in CI/CD using the `PromptEngine` package:
 
 ```csharp
 using PromptEngine.Core.Runtime;
@@ -315,7 +311,7 @@ var metadata = validator.GetLoadedMetadata();
 ## Troubleshooting
 
 - Analyzer does not find templates
- - Make sure your `.prompt.md` files are included via `<AdditionalFiles />` and paths in `PromptContext` match (relative paths are recommended). The generator (in `PromptEngine.Analyzer`) discovers these files at compile time.
+ - Make sure your `.prompt.md` files are included via `<AdditionalFiles />` and paths in `PromptContext` match (relative paths are recommended). The generator discovers these files at compile time.
 - CLI shows "No metadata found"
  - Ensure you built the project first, and that the DLL you point to (or its output folder) contains the generated registry. Running `promptengine list ./bin/Debug/net10.0` after `dotnet build` should list templates.
 - Placeholders not replaced at runtime
@@ -325,7 +321,7 @@ var metadata = validator.GetLoadedMetadata();
 
 ## Requirements
 
-- .NET8.0 or later
+- .NET 8.0 or later
 
 ## Contributing
 

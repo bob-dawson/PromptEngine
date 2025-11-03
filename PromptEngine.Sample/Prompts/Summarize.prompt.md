@@ -3,7 +3,7 @@
 ## Input
 
 ```text
-{InputText}
+{{{InputText}}}
 ```
 
 ## Requirements
@@ -11,4 +11,4 @@
 - Focus on key ideas and main points.
 
 ## Additional Instructions
-{{Instructions}}
+{{{Instructions}}}

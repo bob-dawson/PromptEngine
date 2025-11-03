@@ -5,13 +5,13 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<LangVersion>latest</LangVersion>
-		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 		<PackageId>PromptEngine</PackageId>
 		<AssemblyName>PromptEngine</AssemblyName>
 		<Version>1.0.0</Version>
 		<Authors>Your Company</Authors>
-		<Description>A prompt engineering framework for C# Agent development with compile-time and runtime validation. Includes Agent integration and Editor hint generation.</Description>
-		<PackageTags>prompt;ai;agent;llm;source-generator;editor;typescript;ide</PackageTags>
+		<Description>Runtime library for PromptEngine - A prompt engineering framework for C# Agent development.</Description>
+		<PackageTags>prompt;ai;agent;llm;mustache</PackageTags>
 	</PropertyGroup>
 
 	<ItemGroup>

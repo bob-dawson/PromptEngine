@@ -6,33 +6,64 @@
 		<Nullable>enable</Nullable>
 		<LangVersion>latest</LangVersion>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<PackageId>PromptEngine.Analyzer</PackageId>
+		<PackageId>PromptEngine</PackageId>
 		<Version>1.0.0</Version>
 		<Authors>Your Company</Authors>
-		<Description>A prompt engineering framework for C# Agent development with compile-time and runtime validation</Description>
-		<PackageTags>prompt;ai;agent;llm;source-generator</PackageTags>
+		<Description>A comprehensive prompt engineering framework for C# Agent/LLM development with compile-time validation, code generation and runtime safety checks. Includes runtime library and Roslyn analyzer/source generator.</Description>
+		<PackageTags>prompt;ai;agent;llm;source-generator;analyzer;roslyn;mustache</PackageTags>
 		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+		
+		<!-- Package readme -->
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		
+		<!-- This is an analyzer package -->
+		<IncludeBuildOutput>false</IncludeBuildOutput>
+		<DevelopmentDependency>true</DevelopmentDependency>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Compile Include="..\PromptEngine\Core\Models\PromptMetadata.cs" Link="PromptMetadata.cs" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
-		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" PrivateAssets="all" />
 		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.11.0" PrivateAssets="all" />
-		<PackageReference Include="System.Text.Json" Version="6.0.11" />
-
+		<PackageReference Include="System.Text.Json" Version="6.0.11" PrivateAssets="all" GeneratePathProperty="true" />
+		
+		<!-- Dependencies for the runtime library that will be included in the package -->
+		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.10" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<EmbeddedResource Include="Templates\*.sbncs" />
+		<EmbeddedResource Include="Templates\PromptBuilder.mus" />
+		<EmbeddedResource Include="Templates\Register.mus" />
 	</ItemGroup>
 
+	<!-- Include README.md in the package -->
 	<ItemGroup>
-	  <EmbeddedResource Include="Templates\PromptBuilder.mus" />
-	  <EmbeddedResource Include="Templates\Register.mus" />
+		<None Include="..\README.md" Pack="true" PackagePath="\" />
 	</ItemGroup>
+
+	<PropertyGroup>
+		<TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_AddAnalyzerAndRuntimeToPackage</TargetsForTfmSpecificContentInPackage>
+		<GetTargetPathDependsOn>$(GetTargetPathDependsOn);GetDependencyTargetPaths</GetTargetPathDependsOn>
+	</PropertyGroup>
+
+	<Target Name="GetDependencyTargetPaths">
+		<MSBuild Projects="..\PromptEngine\PromptEngine.csproj" Targets="Build">
+			<Output TaskParameter="TargetOutputs" ItemName="RuntimeDependency" />
+		</MSBuild>
+	</Target>
+
+	<Target Name="_AddAnalyzerAndRuntimeToPackage" DependsOnTargets="GetDependencyTargetPaths">
+		<!-- Add the analyzer DLL to the analyzers folder -->
+		<ItemGroup>
+			<!-- Analyzer files -->
+			<TfmSpecificPackageFile Include="$(OutputPath)\$(AssemblyName).dll" PackagePath="analyzers/dotnet/cs" />
+			<TfmSpecificPackageFile Include="$(PkgSystem_Text_Json)\lib\netstandard2.0\System.Text.Json.dll" PackagePath="analyzers/dotnet/cs" />
+			
+			<!-- Runtime library files -->
+			<TfmSpecificPackageFile Include="..\PromptEngine\bin\$(Configuration)\netstandard2.0\PromptEngine.dll" PackagePath="lib/netstandard2.0" />
+			<TfmSpecificPackageFile Include="..\PromptEngine\bin\$(Configuration)\netstandard2.0\PromptEngine.pdb" PackagePath="lib/netstandard2.0" />
+		</ItemGroup>
+	</Target>
 
 </Project>
