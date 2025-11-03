@@ -7,6 +7,7 @@ A comprehensive prompt engineering framework for C# Agent/LLM development with c
 - Compile-time validation (Analyzer) - Catch template errors during build
 - Runtime validation - Verify template changes in production or CI
 - Type-safe - Strong typing for context and templates
+- **Mustache templating** - Industry-standard template syntax with logic support
 - Agent Framework integration - Works with Microsoft Agent Framework and Semantic Kernel
 - Multi-template support - Manage multiple prompts in one project
 - CLI tools - Validate and manage templates from command line
@@ -47,21 +48,23 @@ Then all files under `Prompts/` with `.prompt.md` extension will be included.
 Create a file `Prompts/Summarize.prompt.md`:
 
 ```markdown
-# Summarize Request for {UserName}
+# Summarize Request for {{{UserName}}}
 
 ## Input
 
 ```text
-{InputText}
+{{{InputText}}}
 ```
 
 ## Requirements
-- Provide a concise summary in {MaxWords} words or less.
+- Provide a concise summary in {{{MaxWords}}} words or less.
 - Focus on key ideas and main points.
 
 ## Additional Instructions
-{Instructions}
+{{{Instructions}}}
 ```
+
+**Note:** PromptEngine uses **Mustache template syntax** 
 
 ###3. Define Context Class
 
@@ -96,6 +99,70 @@ string prompt = context.BuildSummarizePrompt();
 Console.WriteLine(prompt);
 ```
 
+## Template Syntax
+
+PromptEngine uses **Mustache** template syntax, a logic-less templating system that is widely used across different programming languages.
+
+### Basic Variables
+
+Reference context properties using double curly braces:
+
+```markdown
+Hello {{UserName}}, welcome!
+```
+
+### Sections (Conditionals and Loops)
+
+Use sections to conditionally render content or iterate over collections:
+
+```markdown
+{{#HasItems}}
+  You have items:
+  {{#Items}}
+    - {{Name}}: {{Description}}
+  {{/Items}}
+{{/HasItems}}
+```
+
+### Inverted Sections
+
+Render content when a value is false or empty:
+
+```markdown
+{{^HasItems}}
+  No items available.
+{{/HasItems}}
+```
+
+### Nested Properties
+
+Access nested object properties using dot notation:
+
+```markdown
+User: {{User.Name}} ({{User.Email}})
+```
+
+### Comments
+
+Add comments that won't appear in the output:
+
+```markdown
+{{! This is a comment and will not be rendered }}
+```
+
+### Case Insensitivity
+
+Property lookups are case-insensitive by default, so `{{UserName}}`, `{{username}}`, and `{{USERNAME}}` all reference the same property.
+
+### Escaping
+
+All variables are HTML-escaped by default. Use triple braces for unescaped output (use with caution):
+
+```markdown
+Escaped: {{Content}}
+Unescaped: {{{RawHtmlContent}}}
+```
+
 ## Compile-time Validation
 
 With the analyzer/source-generator provided by `PromptEngine.Analyzer`, template issues are reported at build time.
@@ -103,7 +170,7 @@ With the analyzer/source-generator provided by `PromptEngine.Analyzer`, template
 If your template uses undefined placeholders, you'll get a compile error:
 
 ```text
-error PE003: Template uses undefined placeholder '{UndefinedVariable}' not found in context class 'SummarizeContext'
+error PE003: Template uses undefined placeholder '{{UndefinedVariable}}' not found in context class 'SummarizeContext'
 ```
 
 If you have unused properties in your context, you'll get an info diagnostic:
@@ -252,7 +319,9 @@ var metadata = validator.GetLoadedMetadata();
 - CLI shows "No metadata found"
  - Ensure you built the project first, and that the DLL you point to (or its output folder) contains the generated registry. Running `promptengine list ./bin/Debug/net10.0` after `dotnet build` should list templates.
 - Placeholders not replaced at runtime
- - Confirm the context properties are public and names match exactly (case-insensitive). The analyzer enforces this at compile-time via `PE003` / `PE004`.
+ - Confirm the context properties are public and names match (case-insensitive by default). Use Mustache syntax with double curly braces `{{PropertyName}}`. The analyzer enforces this at compile-time via `PE003` / `PE004`.
+- Template syntax errors
+ - Ensure you're using proper Mustache syntax: `{{Variable}}` for properties, `{{#Section}}...{{/Section}}` for conditionals/loops, `{{^Inverted}}...{{/Inverted}}` for inverted sections.
 
 ## Requirements
 
