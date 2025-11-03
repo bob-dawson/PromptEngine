@@ -8,13 +8,18 @@ using PromptEngine.Core.Parsers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Scriban;
+using Stubble.Core;
+using Stubble.Core.Settings;
 
 namespace PromptEngine.Analyzer;
 
 [Generator]
 public class PromptContextGenerator : IIncrementalGenerator
 {
+    private static readonly StubbleVisitorRenderer MustacheRenderer = new(new RendererSettingsBuilder()
+        .SetIgnoreCaseOnKeyLookup(false)
+        .BuildSettings());
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         // Discover classes with PromptContextAttribute
@@ -49,7 +54,7 @@ public class PromptContextGenerator : IIncrementalGenerator
     }
 
     private static bool IsSyntaxTargetForGeneration(SyntaxNode node)
-    => node is ClassDeclarationSyntax cds && cds.AttributeLists.Count > 0;
+        => node is ClassDeclarationSyntax cds && cds.AttributeLists.Count > 0;
 
     private static ClassDeclarationSyntax? GetSemanticTargetForGeneration(GeneratorSyntaxContext context)
     {
@@ -183,7 +188,7 @@ public class PromptContextGenerator : IIncrementalGenerator
                     TemplatePath = templatePath
                 };
                 requests.Add(request);
-                var builderSource = GeneratePromptBuilderWithScriban(request);
+                var builderSource = GeneratePromptBuilderWithMustache(request);
                 var hintName = $"{classSymbol.Name}_{Sanitize(templateName)}_PromptBuilder.g.cs";
                 context.AddSource(hintName, SourceText.From(builderSource, Encoding.UTF8));
             }
@@ -208,15 +213,14 @@ public class PromptContextGenerator : IIncrementalGenerator
         }
 
         // Emit one static registrar that calls each builder Register()
-        var builderSourceRegister = GenerateRegisterWithScriban(compilation, requests);
+        var builderSourceRegister = GenerateRegisterWithMustache(compilation, requests);
         var hintNameRegister = "PromptEngineRegister.g.cs";
         context.AddSource(hintNameRegister, SourceText.From(builderSourceRegister, Encoding.UTF8));
     }
 
-    private static string GenerateRegisterWithScriban(Compilation compilation, List<PromptBuilderRequest> requests)
+    private static string GenerateRegisterWithMustache(Compilation compilation, List<PromptBuilderRequest> requests)
     {
-        var templateText = LoadEmbeddedTemplate("Register.sbncs");
-        var scribanTemplate = Template.Parse(templateText);
+        var templateText = LoadEmbeddedTemplate("Register.mus");
 
         var modelItems = requests.Select(r => new
         {
@@ -226,7 +230,7 @@ public class PromptContextGenerator : IIncrementalGenerator
 
         var assemblyName = compilation.AssemblyName ?? compilation.Assembly.Identity.Name;
         var model = new { assemblyName, items = modelItems };
-        return scribanTemplate.Render(model, member => member.Name, null);
+        return MustacheRenderer.Render(templateText, model);
     }
 
     private static void ReportDiagnostic(SourceProductionContext context, string id, DiagnosticSeverity severity, string message, Location? location)
@@ -268,7 +272,7 @@ public class PromptContextGenerator : IIncrementalGenerator
     }
 
     private static string Normalize(string path)
-    => path.Replace('\\', '/').TrimStart('.', '/');
+        => path.Replace('\\', '/').TrimStart('.', '/');
 
     private static string Sanitize(string name)
     {
@@ -293,7 +297,7 @@ public class PromptContextGenerator : IIncrementalGenerator
         public string TemplatePath { get; set; }
     }
 
-    private static string GeneratePromptBuilderWithScriban(PromptBuilderRequest request)
+    private static string GeneratePromptBuilderWithMustache(PromptBuilderRequest request)
     {
         var namespaceName = request.ContextClass.ContainingNamespace.ToDisplayString();
         var className = request.ContextClass.Name;
@@ -304,8 +308,7 @@ public class PromptContextGenerator : IIncrementalGenerator
         var escapedTemplate = EscapeForCSharp(request.TemplateContent);
         var interpolated = ReplaceWithInterpolations(escapedTemplate, request.Placeholders);
 
-        var templateText = LoadEmbeddedTemplate("PromptBuilder.sbncs");
-        var scribanTemplate = Template.Parse(templateText);
+        var templateText = LoadEmbeddedTemplate("PromptBuilder.mus");
 
         // Pre-escape helper for model strings
         string Esc(string v) => EscapeForCSharp(v ?? string.Empty);
@@ -324,7 +327,7 @@ public class PromptContextGenerator : IIncrementalGenerator
             escaped_template = escapedTemplate,
             interpolated_template = interpolated
         };
-        return scribanTemplate.Render(model, member => member.Name, null);
+        return MustacheRenderer.Render(templateText, model);
     }
 
     private static string LoadEmbeddedTemplate(string fileName)
@@ -354,10 +357,10 @@ public class PromptContextGenerator : IIncrementalGenerator
     }
 
     private static string EscapeForCSharp(string s)
-    => (s ?? string.Empty)
-    .Replace("\\", "\\\\")
-    .Replace("\"", "\\\"")
-    .Replace("\r\n", "\n")
-    .Replace("\r", "")
-    .Replace("\n", "\\n");
+        => (s ?? string.Empty)
+        .Replace("\\", "\\\\")
+        .Replace("\"", "\\\"")
+        .Replace("\r\n", "\n")
+        .Replace("\r", "")
+        .Replace("\n", "\\n");
 }
