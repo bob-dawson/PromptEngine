@@ -6,8 +6,8 @@ namespace PromptEngine.Core.Models;
 public class PromptMetadata
 {
     /// <summary>
-  /// Template name
- /// </summary>
+    /// Template name
+    /// </summary>
     public string TemplateName { get; set; } = string.Empty;
 
     /// <summary>
@@ -18,9 +18,9 @@ public class PromptMetadata
     /// <summary>
     /// Fully qualified context type name
     /// </summary>
-public string ContextTypeName { get; set; } = string.Empty;  
+    public string ContextTypeName { get; set; } = string.Empty;
     /// <summary>
     /// Template content (optional)
     /// </summary>
-    public string? TemplateContent { get; set; }
+    public string TemplateContent { get; set; } = string.Empty;
 }

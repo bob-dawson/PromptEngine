@@ -1,3 +1,4 @@
+#nullable enable
 using Microsoft.CodeAnalysis;
 using Stubble.Core.Parser;
 using Stubble.Core.Tokens;

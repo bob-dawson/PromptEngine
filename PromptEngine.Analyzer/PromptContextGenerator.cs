@@ -1,3 +1,4 @@
+#nullable enable
 using System.Collections.Immutable;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -120,7 +121,7 @@ public class PromptContextGenerator : IIncrementalGenerator
             foreach (var attribute in attributes)
             {
                 // Template path declared on attribute
-                var templatePath = attribute.ConstructorArguments[0].Value?.ToString();
+                var templatePath = attribute.ConstructorArguments[0].Value?.ToString() ?? string.Empty;
                 if (string.IsNullOrWhiteSpace(templatePath))
                 {
                     ReportDiagnostic(context, "PE001", DiagnosticSeverity.Error,
@@ -189,15 +190,7 @@ public class PromptContextGenerator : IIncrementalGenerator
 
                 if (validationErrors.Count > 0) continue;
 
-                var request = new PromptBuilderRequest
-                {
-                    ContextClass = classSymbol,
-                    TemplateName = templateName,
-                    TemplateContent = templateContent,
-                    Placeholders = placeholders,
-                    ContextProperties = properties,
-                    TemplatePath = templatePath.Replace('\\', '/')
-                };
+                var request = new PromptBuilderRequest(classSymbol, templateName, templateContent, templatePath.Replace('\\', '/'));
                 requests.Add(request);
                 var builderSource = GeneratePromptBuilderWithMustache(request);
                 var hintName = $"{classSymbol.Name}_{Sanitize(templateName)}_PromptBuilder.g.cs";
@@ -300,12 +293,17 @@ public class PromptContextGenerator : IIncrementalGenerator
     // DTO to carry generation parameters
     private sealed class PromptBuilderRequest
     {
-        public INamedTypeSymbol ContextClass { get; set; }
-        public string TemplateName { get; set; }
-        public string TemplateContent { get; set; }
-        public HashSet<string> Placeholders { get; set; }
-        public HashSet<string> ContextProperties { get; set; }
-        public string TemplatePath { get; set; }
+        public PromptBuilderRequest(INamedTypeSymbol contextClass, string templateName, string templateContent, string templatePath)
+        {
+            ContextClass = contextClass;
+            TemplateName = templateName;
+            TemplateContent = templateContent;
+            TemplatePath = templatePath;
+        }
+        public INamedTypeSymbol ContextClass { get; }
+        public string TemplateName { get; }
+        public string TemplateContent { get; }
+        public string TemplatePath { get; set; } = string.Empty;
     }
 
     private static string GeneratePromptBuilderWithMustache(PromptBuilderRequest request)

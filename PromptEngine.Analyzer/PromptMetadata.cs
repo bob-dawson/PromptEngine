@@ -1,3 +1,4 @@
+#nullable enable
 namespace PromptEngine.Core.Models;
 
 /// <summary>

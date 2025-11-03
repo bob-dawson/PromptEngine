@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
-		<Nullable>enable</Nullable>
+		<Nullable>disable</Nullable>
 		<LangVersion>latest</LangVersion>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>PromptEngine</PackageId>
@@ -32,7 +32,6 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<EmbeddedResource Include="Templates\*.sbncs" />
 		<EmbeddedResource Include="Templates\PromptBuilder.mus" />
 		<EmbeddedResource Include="Templates\Register.mus" />
 	</ItemGroup>

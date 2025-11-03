@@ -48,9 +48,6 @@ public static partial class {{{ builder_class_name }}}
 
     private static string Render(string template, {{{ context_class_name }}} context)
     {
-        if (template is null) return string.Empty;
-        if (context is null) return template;
-
         return Renderer.Render(template, context);
     }
 
