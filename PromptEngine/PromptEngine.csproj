@@ -14,6 +14,10 @@
 		<PackageTags>prompt;ai;agent;llm;source-generator;analyzer;roslyn;mustache</PackageTags>
 		<!-- Package readme -->
 		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<!-- Project URL for NuGet -->
+		<PackageProjectUrl>https://github.com/bob-dawson/PromptEngine</PackageProjectUrl>
+		<!-- License -->
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<!-- Add analyzer to package -->
 		<TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_AddAnalyzerToPackage</TargetsForTfmSpecificContentInPackage>
 	</PropertyGroup>
