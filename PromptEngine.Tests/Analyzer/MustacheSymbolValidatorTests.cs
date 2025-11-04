@@ -32,7 +32,7 @@ public class MustacheSymbolValidatorTests
         // Act
         var placeholders = MustacheSymbolValidator.ExtractPlaceholders(template);
 
-        // Assert - 只提取顶层属性 Items（不递归到 Section 内部）
+        // Assert - only extracts 'Items' (root-level)
         Assert.Single(placeholders);
         Assert.Contains("Items", placeholders);
     }
@@ -60,7 +60,7 @@ public class MustacheSymbolValidatorTests
         // Act
         var placeholders = MustacheSymbolValidator.ExtractPlaceholders(template);
 
-        // Assert - 只提取根属性 "User"，不跟踪子属性
+        // Assert - only extracts root 'User'
         Assert.Single(placeholders);
         Assert.Contains("User", placeholders);
     }
@@ -366,7 +366,7 @@ Tags: {{#Tags}}{{Name}} ({{Color}}){{/Tags}}
         // Act
         var errors = MustacheSymbolValidator.ValidateTemplate(template, symbol);
 
-        // Assert - 验证仍然检查所有嵌套路径的有效性
+        // Assert - ensure nested paths are validated correctly
         Assert.Empty(errors);
     }
 
@@ -385,7 +385,7 @@ Tags: {{#Tags}}{{Name}} ({{Color}}){{/Tags}}
         // Act
         var placeholders = MustacheSymbolValidator.ExtractPlaceholders(template);
 
-        // Assert - 只提取顶层根属性：Author 和 Posts（不递归到 Section 内部）
+        // Assert - only root properties are extracted: Author and Posts
         Assert.Equal(2, placeholders.Count);
         Assert.Contains("Author", placeholders);
         Assert.Contains("Posts", placeholders);
@@ -405,7 +405,7 @@ Tags: {{#Tags}}{{Name}} ({{Color}}){{/Tags}}
 
         var compilation = CSharpCompilation.Create(
             "TestAssembly",
-            [syntaxTree],
+            new[] { syntaxTree },
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 

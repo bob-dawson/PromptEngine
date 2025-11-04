@@ -30,7 +30,7 @@ public class MustacheTemplateParserTests
         // Act
         var placeholders = MustacheTemplateParser.ExtractPlaceholders(template);
 
-        // Assert - 只提取顶层属性 Items
+        // Assert - only extracts 'Items' (root-level)
         Assert.Single(placeholders);
         Assert.Contains("Items", placeholders);
     }
@@ -58,7 +58,7 @@ public class MustacheTemplateParserTests
         // Act
         var placeholders = MustacheTemplateParser.ExtractPlaceholders(template);
 
-        // Assert - 只提取根属性 "User"
+        // Assert - only extracts root 'User'
         Assert.Single(placeholders);
         Assert.Contains("User", placeholders);
     }
@@ -123,7 +123,7 @@ public class MustacheTemplateParserTests
     public void ValidateTemplate_NestedPath_ValidatesRootProperty()
     {
         // Arrange
-        var placeholders = new HashSet<string> { "User" }; // 只包含根属性
+        var placeholders = new HashSet<string> { "User" }; // only validate root property
         var properties = new HashSet<string> { "User" };
 
         // Act
