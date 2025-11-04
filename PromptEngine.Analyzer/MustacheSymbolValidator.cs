@@ -49,7 +49,7 @@ public static class MustacheSymbolValidator
         {
             var parser = new InstanceMustacheParser();
             var rootNode = parser.Parse(template);
-            
+
             // Only process top-level tokens, no recursion into children
             foreach (var token in rootNode.Children)
             {

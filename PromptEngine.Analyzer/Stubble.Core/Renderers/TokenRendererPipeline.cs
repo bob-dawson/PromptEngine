@@ -13,54 +13,54 @@ using Stubble.Core.Tokens;
 
 namespace Stubble.Core.Renderers
 {
-  /// <summary>
-  /// An internal pipeline of token renderers for use by all render operations
-  /// </summary>
-  /// <typeparam name="TContext">The type of the context for the renderers</typeparam>
-  public class TokenRendererPipeline<TContext>
-      where TContext : BaseContext<TContext>
-  {
-    private readonly OrderedList<ITokenRenderer<TContext>> tokenRenderers;
-
-    private readonly ConcurrentDictionary<Type, ITokenRenderer<TContext>> renderersPerType
-        = new ConcurrentDictionary<Type, ITokenRenderer<TContext>>();
-
     /// <summary>
-    /// Initializes a new instance of the <see cref="TokenRendererPipeline{TContext}"/> class
-    /// with some inital token renderers
+    /// An internal pipeline of token renderers for use by all render operations
     /// </summary>
-    /// <param name="initalRenderers">The renderers to initalise with</param>
-    public TokenRendererPipeline(List<ITokenRenderer<TContext>> initalRenderers)
+    /// <typeparam name="TContext">The type of the context for the renderers</typeparam>
+    public class TokenRendererPipeline<TContext>
+        where TContext : BaseContext<TContext>
     {
-      tokenRenderers = new OrderedList<ITokenRenderer<TContext>>(initalRenderers);
-    }
+        private readonly OrderedList<ITokenRenderer<TContext>> tokenRenderers;
 
-    /// <summary>
-    /// Tries to get a token renderer for a given tag type
-    /// </summary>
-    /// <typeparam name="T">The type of the tag</typeparam>
-    /// <param name="renderer">The base renderer being used to render</param>
-    /// <param name="obj">The tag to get the renderer for</param>
-    /// <returns>The tag renderer that matches or null</returns>
-    public ITokenRenderer<TContext> TryGetTokenRenderer<T>(RendererBase<TContext> renderer, T obj)
-        where T : MustacheToken
-    {
-      var objectType = obj.GetType();
+        private readonly ConcurrentDictionary<Type, ITokenRenderer<TContext>> renderersPerType
+            = new ConcurrentDictionary<Type, ITokenRenderer<TContext>>();
 
-      if (!renderersPerType.TryGetValue(objectType, out var tokenRenderer))
-      {
-        for (var i = 0; i < tokenRenderers.Count; i++)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TokenRendererPipeline{TContext}"/> class
+        /// with some inital token renderers
+        /// </summary>
+        /// <param name="initalRenderers">The renderers to initalise with</param>
+        public TokenRendererPipeline(List<ITokenRenderer<TContext>> initalRenderers)
         {
-          var testRenderer = tokenRenderers[i];
-          if (testRenderer.Accept(renderer, obj))
-          {
-            renderersPerType[objectType] = tokenRenderer = testRenderer;
-            break;
-          }
+            tokenRenderers = new OrderedList<ITokenRenderer<TContext>>(initalRenderers);
         }
-      }
 
-      return tokenRenderer;
+        /// <summary>
+        /// Tries to get a token renderer for a given tag type
+        /// </summary>
+        /// <typeparam name="T">The type of the tag</typeparam>
+        /// <param name="renderer">The base renderer being used to render</param>
+        /// <param name="obj">The tag to get the renderer for</param>
+        /// <returns>The tag renderer that matches or null</returns>
+        public ITokenRenderer<TContext> TryGetTokenRenderer<T>(RendererBase<TContext> renderer, T obj)
+            where T : MustacheToken
+        {
+            var objectType = obj.GetType();
+
+            if (!renderersPerType.TryGetValue(objectType, out var tokenRenderer))
+            {
+                for (var i = 0; i < tokenRenderers.Count; i++)
+                {
+                    var testRenderer = tokenRenderers[i];
+                    if (testRenderer.Accept(renderer, obj))
+                    {
+                        renderersPerType[objectType] = tokenRenderer = testRenderer;
+                        break;
+                    }
+                }
+            }
+
+            return tokenRenderer;
+        }
     }
-  }
 }

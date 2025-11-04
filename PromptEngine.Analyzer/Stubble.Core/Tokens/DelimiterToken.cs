@@ -11,7 +11,7 @@ namespace Stubble.Core.Tokens
     /// An inline tag reprsenting a tag delimiter change
     /// </summary>
     public class DelimiterToken : InlineToken<DelimiterToken>
-{
+    {
         /// <summary>
         /// Gets or sets the starting tag delimiters
         /// </summary>

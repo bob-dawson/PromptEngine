@@ -102,13 +102,13 @@ public static class MustacheTemplateParser
                 strValue.Contains("Stubble.") ||
         strValue.Contains("[]") ||
 strValue.Contains("System."))
-   {
-        return string.Empty;
-           }
+                {
+                    return string.Empty;
+                }
 
-    return strValue;
-       }
-   }
+                return strValue;
+            }
+        }
 
         return string.Empty;
     }

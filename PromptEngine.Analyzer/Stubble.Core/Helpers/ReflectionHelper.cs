@@ -114,7 +114,7 @@ namespace Stubble.Core.Helpers
                             : Expression.Call(instance, mi, arguments);
                     }
 
-                    end:
+                end:
 
                     break;
             }

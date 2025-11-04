@@ -50,7 +50,7 @@ class Program
         }
 
         Console.WriteLine("1. Summarize Prompt Example");
-        Console.WriteLine("--------------------------------");      
+        Console.WriteLine("--------------------------------");
 
         // Example1: Summarize
         var summarizeContext = new SummarizeContext
@@ -63,7 +63,7 @@ class Program
             MaxWords = "50",
             Instructions = "Focus on the key concepts and applications"
         };
-        
+
         // Use the generated Prompt Builder
         var summarizePrompt = summarizeContext.BuildSummarizePrompt();
         // or use the static builder method
