@@ -65,7 +65,7 @@ class Program
         };
 
         // Use the generated Prompt Builder
-        var summarizePrompt = summarizeContext.BuildSummarizePrompt();
+        var summarizePrompt = summarizeContext.BuildSummarizeContextPrompt();
         // or use the static builder method
         //var summarizePrompt = SummarizePromptBuilder.Build(summarizeContext);
         Console.WriteLine(summarizePrompt);

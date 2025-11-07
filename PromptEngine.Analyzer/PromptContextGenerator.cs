@@ -133,7 +133,7 @@ public class PromptContextGenerator : IIncrementalGenerator
                 // Template name, default to the class name
                 var templateName = attribute.NamedArguments
                    .FirstOrDefault(a => a.Key == "TemplateName").Value.Value?.ToString()
-                    ?? classSymbol.Name;
+                    ?? Path.GetFileNameWithoutExtension(templatePath);
 
                 // Resolve template from AdditionalFiles
                 var templateContent = TryResolveTemplateFromAdditionalFiles(additionalFiles, templatePath!, out var resolvedPath, out var resolvedText);

@@ -5,7 +5,7 @@ namespace PromptEngine.Sample.Contexts;
 /// <summary>
 /// Summarize Prompt Context
 /// </summary>
-[PromptContext("Prompts/Summarize.prompt.md", TemplateName = "Summarize")]
+[PromptContext("Prompts/Summarize.md")]
 public class SummarizeContext
 {
     /// <summary>

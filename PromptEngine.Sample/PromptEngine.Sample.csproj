@@ -8,19 +8,13 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <None Remove="Prompts\Summarize.prompt.md" />
-	  <None Remove="Prompts\Translate.prompt.md" />
-	  <None Remove="Prompts\TranslateWithUser.prompt.md" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <AdditionalFiles Include="Prompts\Summarize.prompt.md">
+	  <AdditionalFiles Include="Prompts\Summarize.md">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </AdditionalFiles>
-	  <AdditionalFiles Include="Prompts\Translate.prompt.md">
+	  <AdditionalFiles Include="Prompts\Translate.md">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </AdditionalFiles>
-	  <AdditionalFiles Include="Prompts\TranslateWithUser.prompt.md">
+	  <AdditionalFiles Include="Prompts\TranslateWithUser.md">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </AdditionalFiles>
 	</ItemGroup>

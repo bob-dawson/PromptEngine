@@ -32,14 +32,14 @@ Add your prompt files to the project as AdditionalFiles so the generator can dis
 
 ```xml
 <ItemGroup>
-   <AdditionalFiles Include="Prompts/**/*.prompt.md" />
+   <AdditionalFiles Include="Prompts/**/*.md" />
 </ItemGroup>
 ```
-Then all files under `Prompts/` with the `.prompt.md` extension will be included.
+Then all files under `Prompts/` with the `.md` extension will be included.
 
 ### 2. Create a Prompt Template (Markdown)
 
-Create a file `Prompts/Summarize.prompt.md`:
+Create a file `Prompts/Summarize.md`:
 
 ````markdown
 # Summarize Request for {{{UserName}}}
@@ -65,7 +65,7 @@ Note: PromptEngine uses Mustache template syntax. See the [Mustache documentatio
 ```csharp
 using PromptEngine.Core.Attributes;
 
-[PromptContext("Prompts/Summarize.prompt.md", TemplateName = "Summarize")]
+[PromptContext("Prompts/Summarize.md", TemplateName = "Summarize")]
 public class SummarizeContext
 {
     public string UserName { get; set; } = string.Empty;
@@ -74,6 +74,8 @@ public class SummarizeContext
     public string Instructions { get; set; } = "Focus on key points";
 }
 ```
+
+TemplateName if not set, defaults to the file name without extension of the prompt file.
 
 ### 4. Build and Use
 
@@ -244,8 +246,8 @@ public class MyAgent
 ```
 YourProject/
 ├── Prompts/
-│ ├── Summarize.prompt.md
-│ └── Translate.prompt.md
+│ ├── Summarize.md
+│ └── Translate.md
 ├── Contexts/
 │ ├── SummarizeContext.cs
 │ └── TranslateContext.cs
@@ -256,7 +258,7 @@ Add this to your project file to include prompt templates for the generator:
 
 ```xml
 <ItemGroup>
-   <AdditionalFiles Include="Prompts/**/*.prompt.md" />
+   <AdditionalFiles Include="Prompts/**/*.md" />
 </ItemGroup>
 ```
 
@@ -265,10 +267,10 @@ Add this to your project file to include prompt templates for the generator:
 ### Multiple Templates
 
 ```csharp
-[PromptContext("Prompts/Summarize.prompt.md", TemplateName = "Summarize")]
+[PromptContext("Prompts/Summarize.md", TemplateName = "Summarize")]
 public class SummarizeContext { /* ... */ }
 
-[PromptContext("Prompts/Translate.prompt.md", TemplateName = "Translate")]
+[PromptContext("Prompts/Translate.md", TemplateName = "Translate")]
 public class TranslateContext { /* ... */ }
 ```
 
@@ -280,7 +282,7 @@ The analyzer searches for templates in MSBuild AdditionalFiles. Prefer providing
 ## Troubleshooting
 
 - Analyzer does not find templates
- - Ensure your `.prompt.md` files are included via `<AdditionalFiles />`, and the paths in `PromptContext` match. Relative paths are recommended. The generator discovers these files at compile time.
+ - Ensure your `.md` files are included via `<AdditionalFiles />`, and the paths in `PromptContext` match. Relative paths are recommended. The generator discovers these files at compile time.
 - Placeholders not replaced at runtime
  - Confirm the context properties are public and names match (case-sensitive by default). Use Mustache syntax with double curly braces `{{PropertyName}}`. The analyzer enforces this at compile time via `PE003` / `PE004`.
 - Template syntax errors

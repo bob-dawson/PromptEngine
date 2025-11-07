@@ -5,8 +5,8 @@ namespace PromptEngine.Sample.Contexts;
 /// <summary>
 /// Translate Prompt Context
 /// </summary>
-[PromptContext("Prompts/Translate.prompt.md", TemplateName = "Translate")]
-[PromptContext("Prompts/TranslateWithUser.prompt.md", TemplateName = "TranslateWithUser")] // multiple templates for one context
+[PromptContext("Prompts/Translate.md", TemplateName = "Translate")]
+[PromptContext("Prompts/TranslateWithUser.md", TemplateName = "TranslateWithUser")] // multiple templates for one context
 public class TranslateContext
 {
     /// <summary>
