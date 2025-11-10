@@ -104,6 +104,33 @@ public class MustacheTemplateParserTests
     }
 
     [Fact]
+    public void ExtractPlaceholders_ImplicitIterator_TopLevel_Ignored()
+    {
+        // Arrange
+        var template = "Value: {{.}}";
+
+        // Act
+        var placeholders = MustacheTemplateParser.ExtractPlaceholders(template);
+
+        // Assert - implicit iterator at root should not be counted as a placeholder
+        Assert.Empty(placeholders);
+    }
+
+    [Fact]
+    public void ExtractPlaceholders_ImplicitIterator_InsideSection_OnlySectionRootExtracted()
+    {
+        // Arrange
+        var template = "{{#Items}}{{.}}{{/Items}}";
+
+        // Act
+        var placeholders = MustacheTemplateParser.ExtractPlaceholders(template);
+
+        // Assert - only 'Items' is extracted at root level
+        Assert.Single(placeholders);
+        Assert.Contains("Items", placeholders);
+    }
+
+    [Fact]
     public void ValidateTemplate_AllPropertiesUsed_ReturnsValid()
     {
         // Arrange
@@ -117,6 +144,23 @@ public class MustacheTemplateParserTests
         Assert.True(isValid);
         Assert.Empty(missing);
         Assert.Empty(unused);
+    }
+
+    [Fact]
+    public void ValidateTemplate_CaseSensitive_FailsOnDifferentCasing()
+    {
+        // Arrange
+        var placeholders = new HashSet<string> { "username", "userage" }; // wrong casing
+        var properties = new HashSet<string> { "UserName", "UserAge" };
+
+        // Act
+        var (isValid, missing, unused) = MustacheTemplateParser.ValidateTemplate(placeholders, properties);
+
+        // Assert
+        Assert.False(isValid);
+        Assert.Equal(2, missing.Count);
+        Assert.Contains("username", missing);
+        Assert.Contains("userage", missing);
     }
 
     [Fact]

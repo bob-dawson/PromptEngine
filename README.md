@@ -150,7 +150,7 @@ Add comments that won't appear in the output:
 
 ### Case Sensitivity
 
-Property lookups are case-sensitive by default, so `{{UserName}}`, `{{username}}`, and `{{USERNAME}}` reference different properties.
+Property lookups are case-sensitive, so `{{UserName}}`, `{{username}}`, and `{{USERNAME}}` reference different properties.
 
 ### Escaping
 

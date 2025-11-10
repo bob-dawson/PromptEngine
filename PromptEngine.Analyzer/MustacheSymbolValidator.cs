@@ -39,11 +39,11 @@ public static class MustacheSymbolValidator
     }
 
     /// <summary>
-    /// Extract root-level placeholder properties from the template (no recursion)
+    /// Extract root-level placeholder properties from the template (no recursion, case-sensitive)
     /// </summary>
     public static HashSet<string> ExtractPlaceholders(string template)
     {
-        var placeholders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var placeholders = new HashSet<string>();
 
         try
         {
@@ -56,9 +56,16 @@ public static class MustacheSymbolValidator
                 var path = GetPathStringFromToken(token);
                 if (!string.IsNullOrEmpty(path))
                 {
-                    // Only extract root property (first segment before dot)
+				    // implicit iterator
+                    if (path == ".") 
+						continue; 
+					
+					// Only extract root property (first segment before dot)
                     var rootProperty = path.Split('.')[0];
-                    placeholders.Add(rootProperty);
+                    if (!string.IsNullOrWhiteSpace(rootProperty))
+                    {
+                        placeholders.Add(rootProperty);
+                    }
                 }
             }
         }
@@ -144,6 +151,10 @@ public static class MustacheSymbolValidator
 
     private static void ValidatePath(string path, INamedTypeSymbol currentSymbol, List<string> errors)
     {
+		// implicit iterator
+        if (path == ".") 
+			return; 
+
         var segments = path.Split('.');
         ITypeSymbol? symbol = currentSymbol;
 
@@ -165,6 +176,12 @@ public static class MustacheSymbolValidator
 
     private static ITypeSymbol? GetPathSymbol(string path, ITypeSymbol currentSymbol, out bool isValid)
     {
+        if (path == ".")
+        {
+            isValid = true;
+            return currentSymbol;
+        }
+
         var segments = path.Split('.');
         ITypeSymbol? symbol = currentSymbol;
         isValid = true;
@@ -193,10 +210,10 @@ public static class MustacheSymbolValidator
 
     private static bool TryGetMemberSymbol(ITypeSymbol typeSymbol, string name, out ITypeSymbol? memberSymbol)
     {
-        // Try to find property or field with case-insensitive match
+        // Try to find property or field
         var members = typeSymbol.GetMembers()
             .Where(m => m.DeclaredAccessibility == Accessibility.Public)
-            .Where(m => string.Equals(m.Name, name, StringComparison.OrdinalIgnoreCase));
+            .Where(m => m.Name == name);
 
         foreach (var member in members)
         {

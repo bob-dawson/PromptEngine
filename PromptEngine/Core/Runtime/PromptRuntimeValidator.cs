@@ -181,6 +181,9 @@ public static class PromptRuntimeValidator
 
     private static void ValidatePath(string path, Type currentType, List<string> errors)
     {
+        // Implicit iterator refers to current context and is always valid
+        if (path == ".") return;
+
         var segments = path.Split('.');
         Type? type = currentType;
 
@@ -202,6 +205,13 @@ public static class PromptRuntimeValidator
 
     private static Type? GetPathType(string path, Type currentType, out bool isValid)
     {
+        // Implicit iterator remains current type
+        if (path == ".")
+        {
+            isValid = true;
+            return currentType;
+        }
+
         var segments = path.Split('.');
         Type? type = currentType;
         isValid = true;
@@ -230,8 +240,8 @@ public static class PromptRuntimeValidator
 
     private static bool TryGetMemberType(Type type, string name, out Type? memberType)
     {
-        // Try to find property or field with case-insensitive match
-        var bindingFlags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase;
+        // Case-sensitive search for public instance property/field
+        var bindingFlags = BindingFlags.Public | BindingFlags.Instance;
 
         // Try property first
         var property = type.GetProperty(name, bindingFlags);

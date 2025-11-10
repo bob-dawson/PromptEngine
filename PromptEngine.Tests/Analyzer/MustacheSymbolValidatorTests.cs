@@ -304,7 +304,7 @@ namespace Test
     }
 
     [Fact]
-    public void ValidateTemplate_CaseInsensitive_ValidatesCorrectly()
+    public void ValidateTemplate_CaseSensitive_FailsOnDifferentCasing()
     {
         // Arrange
         var code = @"
@@ -316,14 +316,16 @@ namespace Test
         public int UserAge { get; set; }
     }
 }";
-        var template = "Hello {{username}}, you are {{userage}} years old";
+        var template = "Hello {{username}}, you are {{userage}} years old"; // wrong casing
         var symbol = GetTypeSymbol(code, "TestContext");
 
         // Act
         var errors = MustacheSymbolValidator.ValidateTemplate(template, symbol);
 
         // Assert
-        Assert.Empty(errors);
+        Assert.Equal(2, errors.Count);
+        Assert.Contains(errors, e => e.Contains("username"));
+        Assert.Contains(errors, e => e.Contains("userage"));
     }
 
     [Fact]
@@ -389,6 +391,57 @@ Tags: {{#Tags}}{{Name}} ({{Color}}){{/Tags}}
         Assert.Equal(2, placeholders.Count);
         Assert.Contains("Author", placeholders);
         Assert.Contains("Posts", placeholders);
+    }
+
+    [Fact]
+    public void ValidateTemplate_ImplicitIterator_InSectionOfStringList_ValidatesCorrectly()
+    {
+        // Arrange
+        var code = @"
+using System.Collections.Generic;
+
+namespace Test
+{
+    public class TestContext
+    {
+        public List<string> Items { get; set; }
+    }
+}";
+        var template = "{{#Items}}{{.}}{{/Items}}";
+        var symbol = GetTypeSymbol(code, "TestContext");
+
+        // Act
+        var errors = MustacheSymbolValidator.ValidateTemplate(template, symbol);
+
+        // Assert
+        Assert.Empty(errors);
+    }
+
+    [Fact]
+    public void ExtractPlaceholders_ImplicitIterator_TopLevel_Ignored()
+    {
+        // Arrange
+        var template = "Value: {{.}}";
+
+        // Act
+        var placeholders = MustacheSymbolValidator.ExtractPlaceholders(template);
+
+        // Assert - implicit iterator at root should not be counted as a placeholder
+        Assert.Empty(placeholders);
+    }
+
+    [Fact]
+    public void ExtractPlaceholders_ImplicitIterator_InsideSection_OnlySectionRootExtracted()
+    {
+        // Arrange
+        var template = "{{#Items}}{{.}}{{/Items}}";
+
+        // Act
+        var placeholders = MustacheSymbolValidator.ExtractPlaceholders(template);
+
+        // Assert - only 'Items' is extracted at root level
+        Assert.Single(placeholders);
+        Assert.Contains("Items", placeholders);
     }
 
     /// <summary>

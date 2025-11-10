@@ -12,14 +12,14 @@ namespace PromptEngine.Core.Parsers;
 public static class MustacheTemplateParser
 {
     /// <summary>
-    /// Extract all variable paths from a Mustache template (only root-level properties)
+    /// Extract all variable paths from a Mustache template (only root-level properties, case-sensitive)
     /// </summary>
     public static HashSet<string> ExtractPlaceholders(string templateContent)
     {
         if (string.IsNullOrWhiteSpace(templateContent))
             return new HashSet<string>();
 
-        var placeholders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var placeholders = new HashSet<string>();
 
         try
         {
@@ -32,9 +32,16 @@ public static class MustacheTemplateParser
                 var path = GetPathStringFromToken(token);
                 if (!string.IsNullOrEmpty(path))
                 {
+					// implicit iterator
+                    if (path == ".")
+						continue; 
+						
                     // Only extract root property (first segment before dot)
-                    var rootProperty = path.Split('.')[0];
-                    placeholders.Add(rootProperty);
+					var rootProperty = path.Split('.')[0];
+                    if (!string.IsNullOrWhiteSpace(rootProperty))
+                    {
+                        placeholders.Add(rootProperty);
+                    }
                 }
             }
         }
@@ -59,8 +66,8 @@ public static class MustacheTemplateParser
         // Check that each placeholder has a corresponding context property
         foreach (var placeholder in placeholders)
         {
-            // All placeholders are now root properties only
-            if (!contextProperties.Contains(placeholder, StringComparer.OrdinalIgnoreCase))
+			// All placeholders are now root properties only
+            if (!contextProperties.Contains(placeholder))
             {
                 missingProperties.Add(placeholder);
             }
@@ -69,7 +76,7 @@ public static class MustacheTemplateParser
         // Find context properties that are not used in the template
         foreach (var property in contextProperties)
         {
-            if (!placeholders.Contains(property, StringComparer.OrdinalIgnoreCase))
+            if (!placeholders.Contains(property))
             {
                 unusedProperties.Add(property);
             }
@@ -86,9 +93,9 @@ public static class MustacheTemplateParser
 
         // Try common property names
         var prop = type.GetProperty("Content") ??
-           type.GetProperty("SectionName") ??
-     type.GetProperty("ContentToken") ??
-          type.GetProperty("Path");
+           	type.GetProperty("SectionName") ??
+     		type.GetProperty("ContentToken") ??
+          	type.GetProperty("Path");
 
         if (prop != null)
         {
@@ -99,9 +106,9 @@ public static class MustacheTemplateParser
 
                 // Filter out internal type names and invalid paths
                 if (string.IsNullOrWhiteSpace(strValue) ||
-                strValue.Contains("Stubble.") ||
-        strValue.Contains("[]") ||
-strValue.Contains("System."))
+                	strValue.Contains("Stubble.") ||
+        			strValue.Contains("[]") ||
+					strValue.Contains("System."))
                 {
                     return string.Empty;
                 }

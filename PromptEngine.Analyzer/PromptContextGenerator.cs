@@ -15,7 +15,7 @@ namespace PromptEngine.Analyzer;
 public class PromptContextGenerator : IIncrementalGenerator
 {
     private static readonly StubbleVisitorRenderer MustacheRenderer = new(new RendererSettingsBuilder()
-    .SetIgnoreCaseOnKeyLookup(true)
+    .SetIgnoreCaseOnKeyLookup(false)
         .BuildSettings());
 
     public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -101,7 +101,7 @@ public class PromptContextGenerator : IIncrementalGenerator
             if (attributes.Length == 0) continue;
 
             // Collect public context properties once per class
-            var properties = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+            var properties = new HashSet<string>();
             var propertySymbols = classSymbol.GetMembers()
                 .OfType<IPropertySymbol>()
                 .Where(p => p.DeclaredAccessibility == Accessibility.Public)
@@ -116,7 +116,7 @@ public class PromptContextGenerator : IIncrementalGenerator
             }
 
             // Track union of placeholders across all templates for this class
-            var unionPlaceholders = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+            var unionPlaceholders = new HashSet<string>();
 
             foreach (var attribute in attributes)
             {
@@ -198,7 +198,7 @@ public class PromptContextGenerator : IIncrementalGenerator
             }
 
             // After processing all templates for this class, warn about properties unused across all templates
-            var unusedOverall = properties.Except(unionPlaceholders, System.StringComparer.OrdinalIgnoreCase);
+            var unusedOverall = properties.Except(unionPlaceholders);
             foreach (var u in unusedOverall)
             {
                 Location? loc = null;
@@ -257,7 +257,7 @@ public class PromptContextGenerator : IIncrementalGenerator
         {
             var normHay = Normalize(file.Path);
             if (normHay.EndsWith(normNeedle) ||
-                string.Equals(System.IO.Path.GetFileName(normHay), System.IO.Path.GetFileName(normNeedle), System.StringComparison.OrdinalIgnoreCase))
+                System.IO.Path.GetFileName(normHay) == System.IO.Path.GetFileName(normNeedle))
             {
                 resolvedPath = file.Path;
                 resolvedText = file.Content;

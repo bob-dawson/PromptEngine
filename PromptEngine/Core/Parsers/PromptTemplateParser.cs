@@ -21,7 +21,7 @@ public static class PromptTemplateParser
         // Check that each placeholder has a corresponding context property
         foreach (var placeholder in placeholders)
         {
-            if (!contextProperties.Contains(placeholder, StringComparer.OrdinalIgnoreCase))
+            if (!contextProperties.Contains(placeholder))
             {
                 missingProperties.Add(placeholder);
             }
@@ -30,7 +30,7 @@ public static class PromptTemplateParser
         // Find context properties that are not used in the template
         foreach (var property in contextProperties)
         {
-            if (!placeholders.Contains(property, StringComparer.OrdinalIgnoreCase))
+            if (!placeholders.Contains(property))
             {
                 unusedProperties.Add(property);
             }
